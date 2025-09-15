@@ -171,4 +171,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_categories_title'), table_name='categories')
     op.drop_index(op.f('ix_categories_id'), table_name='categories')
     op.drop_table('categories')
+
+    op.execute('DROP TYPE listvisibility;')
     # ### end Alembic commands ###
