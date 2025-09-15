@@ -30,8 +30,6 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     """Initialize database connection (no longer creates tables - use Alembic)"""
-    # Import all models here to ensure they are registered with SQLAlchemy
-    from app.models import user, place, post, category, user_list  # noqa
     
     # Just test the connection
     async with engine.begin() as conn:

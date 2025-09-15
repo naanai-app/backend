@@ -24,12 +24,6 @@ logs-app: ## Show logs from app service only
 shell: ## Open shell in app container
 	docker-compose exec app bash
 
-db-init: ## Initialize database tables
-	docker-compose exec app python scripts/init_db.py
-
-db-reset: ## Reset database (WARNING: deletes all data)
-	docker-compose exec app python scripts/init_db.py --reset
-
 db-check: ## Check database health
 	docker-compose exec app python scripts/check_db.py
 
@@ -58,8 +52,6 @@ rebuild: ## Rebuild and restart services
 	docker-compose up -d
 
 # Database shortcuts
-init: db-init ## Alias for db-init
-reset: db-reset ## Alias for db-reset
 check: db-check ## Alias for db-check
 seed: db-seed ## Alias for db-seed
 admin: create-admin ## Alias for create-admin

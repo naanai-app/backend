@@ -185,7 +185,7 @@ async def get_user_stats(
         followers_count=len(followers),
         following_count=len(following),
         friends_count=len(friends),
-        posts_count=0,  # TODO: Implement
+        check_ins_count=0,  # TODO: Implement
         lists_count=0   # TODO: Implement
     )
 

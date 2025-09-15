@@ -94,5 +94,5 @@ class UserStats(BaseModel):
     followers_count: int
     following_count: int
     friends_count: int
-    posts_count: int
+    check_ins_count: int
     lists_count: int

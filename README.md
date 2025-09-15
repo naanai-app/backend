@@ -1,6 +1,6 @@
-# Place Recommendation Social Network API
+# NaaNai API
 
-A comprehensive backend application for a mobile place recommendation social network built with FastAPI, PostgreSQL, and Neo4j.
+A comprehensive backend application for a NaaNai mobile application built with FastAPI, PostgreSQL, and Neo4j.
 
 ## Features
 
@@ -31,7 +31,7 @@ app/
 │       │   ├── users.py         # User management and social features
 │       │   ├── places.py        # Place management
 │       │   ├── categories.py    # Category management
-│       │   ├── posts.py         # Posts, likes, comments
+│       │   ├── check_ins.py         # Posts, likes, comments
 │       │   └── user_lists.py    # User lists management
 │       └── api.py               # API router configuration
 ├── core/
@@ -44,17 +44,17 @@ app/
 │   ├── user.py                 # User CRUD operations
 │   ├── place.py                # Place CRUD operations
 │   ├── category.py             # Category CRUD operations
-│   ├── post.py                 # Post CRUD operations
+│   ├── check_in.py                 # Post CRUD operations
 │   └── user_list.py            # User list CRUD operations
 ├── models/
 │   ├── user.py                 # User SQLAlchemy model
 │   ├── place.py                # Place and category models
-│   ├── post.py                 # Post, comment, like models
+│   ├── check_in.py                 # Post, comment, like models
 │   └── user_list.py            # User list models
 ├── schemas/
 │   ├── user.py                 # User Pydantic schemas
 │   ├── place.py                # Place and category schemas
-│   ├── post.py                 # Post schemas
+│   ├── check_in.py                 # Post schemas
 │   └── user_list.py            # User list schemas
 └── main.py                     # FastAPI application entry point
 ```
