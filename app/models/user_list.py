@@ -1,7 +1,14 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+import enum
+
+
+class ListVisibility(str, enum.Enum):
+    PRIVATE = "private"
+    PUBLIC = "public"
+    FRIENDS = "friends"
 
 
 class UserList(Base):
@@ -13,7 +20,7 @@ class UserList(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_default = Column(Boolean, default=False)  # For liked/disliked places
     list_type = Column(String, nullable=False)  # 'liked', 'disliked', 'custom'
-    is_public = Column(Boolean, default=False)
+    visibility = Column(Enum(ListVisibility), default=ListVisibility.PRIVATE, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

@@ -69,12 +69,30 @@ app/
    cp .env.example .env
    ```
 3. Update the `.env` file with your configuration
-4. Start all services:
+4. Start all services (database will auto-initialize):
    ```bash
    docker-compose up -d
    ```
 5. The API will be available at `http://localhost:8000`
 6. API documentation at `http://localhost:8000/docs`
+7. Create an admin user:
+   ```bash
+   make create-admin
+   # or
+   docker-compose exec app python scripts/create_admin.py
+   ```
+
+### Using Makefile Commands
+
+```bash
+make up           # Start all services
+make logs         # View logs
+make db-check     # Check database health
+make create-admin # Create admin user
+make shell        # Open shell in app container
+make down         # Stop all services
+make help         # Show all available commands
+```
 
 ### Manual Setup
 
@@ -85,7 +103,11 @@ app/
    ```
 3. Set up PostgreSQL and Neo4j databases
 4. Copy and configure `.env` file
-5. Run the application:
+5. Initialize database:
+   ```bash
+   python scripts/init_db.py
+   ```
+6. Run the application:
    ```bash
    uvicorn app.main:app --reload
    ```
@@ -180,6 +202,80 @@ Key environment variables:
 - `GOOGLE_MAPS_API_KEY`: Optional Google Maps integration
 - `BACKEND_CORS_ORIGINS`: Allowed CORS origins for frontend
 
+## Database Management
+
+### Initialization Scripts
+
+The project includes comprehensive database management scripts:
+
+#### Core Scripts
+- **`scripts/init_db.py`** - Initialize database tables and seed data
+- **`scripts/check_db.py`** - Check database health and connections
+- **`scripts/seed_data.py`** - Seed initial categories and demo data
+- **`scripts/create_admin.py`** - Create admin user interactively
+- **`scripts/wait_for_db.py`** - Wait for database services (used in Docker)
+
+#### Usage Examples
+
+```bash
+# Initialize database (creates tables and seeds data)
+python scripts/init_db.py
+
+# Check database health
+python scripts/check_db.py
+
+# Reset database (WARNING: deletes all data)
+python scripts/init_db.py --reset
+
+# Create admin user
+python scripts/create_admin.py
+
+# Seed demo data only
+python scripts/seed_data.py
+```
+
+#### Convenience Scripts
+
+**Linux/Mac:**
+```bash
+./scripts/run.sh init    # Initialize database
+./scripts/run.sh check   # Check database health
+./scripts/run.sh admin   # Create admin user
+./scripts/run.sh dev     # Start development server
+```
+
+**Windows:**
+```bash
+scripts\run.bat init     # Initialize database
+scripts\run.bat check    # Check database health
+scripts\run.bat admin    # Create admin user
+scripts\run.bat dev      # Start development server
+```
+
+#### Docker Commands
+
+```bash
+# Using Makefile (recommended)
+make db-init      # Initialize database
+make db-check     # Check database health
+make create-admin # Create admin user
+make db-seed      # Seed demo data
+make db-reset     # Reset database
+
+# Using docker-compose directly
+docker-compose exec app python scripts/init_db.py
+docker-compose exec app python scripts/check_db.py
+docker-compose exec app python scripts/create_admin.py
+```
+
+### Initial Data
+
+The database initialization includes:
+- **12 predefined categories** with colors (Restaurant, Cafe, Bar, Shopping, etc.)
+- **Demo user** (`demo@example.com` / `demo123`) for testing
+- **5 sample places** in New York with proper categorization
+- **Default user lists** (Liked Places, Disliked Places) for each user
+
 ## Development
 
 ### Adding New Features
@@ -194,11 +290,45 @@ Key environment variables:
 
 ```bash
 pytest
+# or with Docker
+make test
 ```
 
 ### Database Migrations
 
-The application uses SQLAlchemy with automatic table creation. For production, consider using Alembic for database migrations.
+The application uses SQLAlchemy with automatic table creation. For production, consider using Alembic for database migrations:
+
+```bash
+# Generate migration
+alembic revision --autogenerate -m "Add new table"
+
+# Apply migration
+alembic upgrade head
+```
+
+## Docker Services
+
+The application runs with the following services:
+
+- **app** (Port 8000): FastAPI application with auto-initialization
+- **db** (Port 5432): PostgreSQL 15 database
+- **neo4j** (Ports 7474, 7687): Neo4j 5.14 graph database with APOC plugins
+- **redis** (Port 6379): Redis for caching (optional)
+
+### Service Health Checks
+
+All services include health checks to ensure proper startup order:
+- PostgreSQL: `pg_isready` check
+- Neo4j: Cypher shell connectivity test
+- App: Waits for both databases before starting
+
+### Auto-Initialization
+
+The Docker setup automatically:
+1. Waits for database services to be healthy
+2. Creates database tables if they don't exist
+3. Seeds initial data (categories, demo user, sample places)
+4. Starts the FastAPI application
 
 ## Deployment
 
@@ -210,14 +340,17 @@ The application uses SQLAlchemy with automatic table creation. For production, c
 4. Set up monitoring and logging
 5. Use a reverse proxy (nginx) for static files and load balancing
 6. Consider using managed database services for PostgreSQL and Neo4j
+7. Remove demo data and change default passwords
+8. Set up backup strategies for both PostgreSQL and Neo4j
 
 ### Security Features
 
-- JWT token-based authentication
+- JWT token-based authentication with configurable expiration
 - Password hashing with bcrypt
 - Input validation with Pydantic
 - SQL injection protection with SQLAlchemy ORM
 - CORS configuration for frontend integration
+- Health check endpoints for monitoring
 
 ## API Documentation
 

@@ -22,6 +22,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
+# Make scripts executable
+RUN chmod +x scripts/*.sh scripts/*.py
+
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser
@@ -29,5 +32,5 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use custom entrypoint that initializes database
+ENTRYPOINT ["scripts/docker_entrypoint.sh"]

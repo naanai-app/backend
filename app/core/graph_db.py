@@ -9,10 +9,21 @@ class GraphDatabase:
     
     async def connect(self):
         """Initialize Neo4j connection"""
-        self.driver = AsyncGraphDatabase.driver(
-            settings.NEO4J_URI,
-            auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)
-        )
+        try:
+            self.driver = AsyncGraphDatabase.driver(
+                settings.NEO4J_URI,
+                auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD),
+                max_connection_lifetime=3600,
+                max_connection_pool_size=50,
+                connection_acquisition_timeout=60
+            )
+            # Test the connection
+            await self.driver.verify_connectivity()
+            print(f"✅ Connected to Neo4j at {settings.NEO4J_URI}")
+        except Exception as e:
+            print(f"❌ Failed to connect to Neo4j: {e}")
+            self.driver = None
+            raise
     
     async def close(self):
         """Close Neo4j connection"""
