@@ -21,8 +21,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
+    check_ins = relationship("CheckIn", back_populates="author", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
-    likes = relationship("PostLike", back_populates="user", cascade="all, delete-orphan")
+    check_in_likes = relationship("CheckInLike", back_populates="user", cascade="all, delete-orphan")
     user_lists = relationship("UserList", back_populates="user", cascade="all, delete-orphan")
-    list_items = relationship("UserListItem", back_populates="user", cascade="all, delete-orphan")

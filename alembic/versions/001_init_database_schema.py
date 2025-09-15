@@ -1,13 +1,13 @@
-"""Initial database schema
+"""Init database schema
 
-Revision ID: 001
+Revision ID: 1467c0296b4a
 Revises: 
-Create Date: 2025-09-15 16:10:00.000000
+Create Date: 2025-09-15 20:10:40.120886
 
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
 
 # revision identifiers, used by Alembic.
 revision = '001'
@@ -29,7 +29,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_categories_id'), 'categories', ['id'], unique=False)
     op.create_index(op.f('ix_categories_title'), 'categories', ['title'], unique=True)
-    
     op.create_table('places',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
@@ -52,7 +51,6 @@ def upgrade() -> None:
     op.create_index(op.f('ix_places_city'), 'places', ['city'], unique=False)
     op.create_index(op.f('ix_places_id'), 'places', ['id'], unique=False)
     op.create_index(op.f('ix_places_title'), 'places', ['title'], unique=False)
-    
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
@@ -71,19 +69,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
-    
-    op.create_table('place_categories',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('place_id', sa.Integer(), nullable=False),
-    sa.Column('category_id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
-    sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_place_categories_id'), 'place_categories', ['id'], unique=False)
-    
-    op.create_table('posts',
+    op.create_table('check_ins',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('image_url', sa.String(), nullable=True),
@@ -96,8 +82,17 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_posts_id'), 'posts', ['id'], unique=False)
-    
+    op.create_index(op.f('ix_check_ins_id'), 'check_ins', ['id'], unique=False)
+    op.create_table('place_categories',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('place_id', sa.Integer(), nullable=False),
+    sa.Column('category_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
+    sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_place_categories_id'), 'place_categories', ['id'], unique=False)
     op.create_table('user_lists',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -105,53 +100,47 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('is_default', sa.Boolean(), nullable=True),
     sa.Column('list_type', sa.String(), nullable=False),
-    sa.Column('is_public', sa.Boolean(), nullable=True),
+    sa.Column('visibility', sa.Enum('PRIVATE', 'PUBLIC', 'FRIENDS', name='listvisibility'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_user_lists_id'), 'user_lists', ['id'], unique=False)
-    
+    op.create_table('check_in_likes',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('check_in_id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.ForeignKeyConstraint(['check_in_id'], ['check_ins.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sqlite_autoincrement=True
+    )
+    op.create_index(op.f('ix_check_in_likes_id'), 'check_in_likes', ['id'], unique=False)
     op.create_table('comments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('author_id', sa.Integer(), nullable=False),
-    sa.Column('post_id', sa.Integer(), nullable=False),
-    sa.Column('parent_comment_id', sa.Integer(), nullable=True),
+    sa.Column('check_in_id', sa.Integer(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['author_id'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['parent_comment_id'], ['comments.id'], ),
-    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
+    sa.ForeignKeyConstraint(['check_in_id'], ['check_ins.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_comments_id'), 'comments', ['id'], unique=False)
-    
-    op.create_table('post_likes',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('post_id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_post_likes_id'), 'post_likes', ['id'], unique=False)
-    
     op.create_table('user_list_items',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('list_id', sa.Integer(), nullable=False),
     sa.Column('place_id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('rating', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.ForeignKeyConstraint(['list_id'], ['user_lists.id'], ),
     sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sqlite_autoincrement=True
     )
     op.create_index(op.f('ix_user_list_items_id'), 'user_list_items', ['id'], unique=False)
     # ### end Alembic commands ###
@@ -161,16 +150,16 @@ def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index(op.f('ix_user_list_items_id'), table_name='user_list_items')
     op.drop_table('user_list_items')
-    op.drop_index(op.f('ix_post_likes_id'), table_name='post_likes')
-    op.drop_table('post_likes')
     op.drop_index(op.f('ix_comments_id'), table_name='comments')
     op.drop_table('comments')
+    op.drop_index(op.f('ix_check_in_likes_id'), table_name='check_in_likes')
+    op.drop_table('check_in_likes')
     op.drop_index(op.f('ix_user_lists_id'), table_name='user_lists')
     op.drop_table('user_lists')
-    op.drop_index(op.f('ix_posts_id'), table_name='posts')
-    op.drop_table('posts')
     op.drop_index(op.f('ix_place_categories_id'), table_name='place_categories')
     op.drop_table('place_categories')
+    op.drop_index(op.f('ix_check_ins_id'), table_name='check_ins')
+    op.drop_table('check_ins')
     op.drop_index(op.f('ix_users_username'), table_name='users')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')

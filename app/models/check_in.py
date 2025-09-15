@@ -4,8 +4,8 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 
-class Post(Base):
-    __tablename__ = "posts"
+class CheckIn(Base):
+    __tablename__ = "check_ins"
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
@@ -17,10 +17,10 @@ class Post(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    author = relationship("User", back_populates="posts")
-    place = relationship("Place", back_populates="posts")
-    comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
-    likes = relationship("PostLike", back_populates="post", cascade="all, delete-orphan")
+    author = relationship("User", back_populates="check_ins")
+    place = relationship("Place", back_populates="check_ins")
+    comments = relationship("Comment", back_populates="check_in", cascade="all, delete-orphan")
+    likes = relationship("CheckInLike", back_populates="check_in", cascade="all, delete-orphan")
 
 
 class Comment(Base):
@@ -29,32 +29,29 @@ class Comment(Base):
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
-    parent_comment_id = Column(Integer, ForeignKey("comments.id"), nullable=True)  # For nested comments
+    check_in_id = Column(Integer, ForeignKey("check_ins.id"), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     author = relationship("User", back_populates="comments")
-    post = relationship("Post", back_populates="comments")
-    parent_comment = relationship("Comment", remote_side=[id])
-    replies = relationship("Comment", back_populates="parent_comment")
+    check_in = relationship("CheckIn", back_populates="comments")
 
 
-class PostLike(Base):
-    __tablename__ = "post_likes"
+class CheckInLike(Base):
+    __tablename__ = "check_in_likes"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+    check_in_id = Column(Integer, ForeignKey("check_ins.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="likes")
-    post = relationship("Post", back_populates="likes")
+    user = relationship("User", back_populates="check_in_likes")
+    check_in = relationship("CheckIn", back_populates="likes")
 
-    # Ensure a user can only like a post once
+    # Ensure a user can only like a check-in once
     __table_args__ = (
         {"sqlite_autoincrement": True},
     )

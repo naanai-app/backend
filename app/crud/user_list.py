@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
 
-from app.models.user_list import UserList, UserListItem
+from app.models.user_list import UserList, UserListItem, ListVisibility
 from app.schemas.user_list import UserListCreate, UserListUpdate, UserListItemCreate, UserListItemUpdate
 
 
@@ -73,6 +73,40 @@ class UserListCRUD:
         await db.commit()
         return True
 
+    async def create_default_lists(self, db: AsyncSession, user_id: int) -> List[UserList]:
+        """Create default liked and disliked lists for a new user"""
+        default_lists = []
+        
+        # Create liked places list
+        liked_list = UserList(
+            name="Liked Places",
+            description="Places I like and recommend",
+            user_id=user_id,
+            is_default=True,
+            list_type="liked",
+            visibility=ListVisibility.PRIVATE
+        )
+        db.add(liked_list)
+        default_lists.append(liked_list)
+        
+        # Create disliked places list
+        disliked_list = UserList(
+            name="Disliked Places",
+            description="Places I don't recommend",
+            user_id=user_id,
+            is_default=True,
+            list_type="disliked",
+            visibility=ListVisibility.PRIVATE
+        )
+        db.add(disliked_list)
+        default_lists.append(disliked_list)
+        
+        await db.commit()
+        for list_item in default_lists:
+            await db.refresh(list_item)
+        
+        return default_lists
+
 
 class UserListItemCRUD:
     async def get(self, db: AsyncSession, item_id: int) -> Optional[UserListItem]:
@@ -97,33 +131,33 @@ class UserListItemCRUD:
         )
         return result.scalars().all()
 
-    async def add_to_list(
-        self, db: AsyncSession, list_id: int, user_id: int, item_create: UserListItemCreate
-    ) -> Optional[UserListItem]:
+    async def add_to_list(self, db: AsyncSession, list_id: int, item_create: UserListItemCreate) -> UserListItem:
         """Add place to user list"""
-        # Check if place is already in the list
+        # Check if place already exists in list
         result = await db.execute(
             select(UserListItem).where(
-                and_(
-                    UserListItem.list_id == list_id,
-                    UserListItem.place_id == item_create.place_id
-                )
+                UserListItem.list_id == list_id,
+                UserListItem.place_id == item_create.place_id
             )
         )
         existing_item = result.scalar_one_or_none()
         
         if existing_item:
-            return None  # Already in list
+            # Update existing item
+            existing_item.rating = item_create.rating
+            await db.commit()
+            await db.refresh(existing_item)
+            return existing_item
         
+        # Create new item
         db_item = UserListItem(
-            **item_create.dict(),
             list_id=list_id,
-            user_id=user_id
+            **item_create.dict()
         )
         db.add(db_item)
         await db.commit()
         await db.refresh(db_item)
-        return await self.get(db, db_item.id)
+        return db_item
 
     async def update(self, db: AsyncSession, item: UserListItem, item_update: UserListItemUpdate) -> UserListItem:
         """Update list item"""
@@ -162,7 +196,7 @@ class UserListItemCRUD:
             return None
         
         item_create = UserListItemCreate(place_id=place_id, rating=rating)
-        return await self.add_to_list(db, default_list.id, user_id, item_create)
+        return await self.add_to_list(db, default_list.id, item_create)
 
 
 user_list_crud = UserListCRUD()

@@ -25,7 +25,7 @@ class Place(Base):
 
     # Relationships
     categories = relationship("PlaceCategory", back_populates="place", cascade="all, delete-orphan")
-    posts = relationship("Post", back_populates="place")
+    check_ins = relationship("CheckIn", back_populates="place")
     list_items = relationship("UserListItem", back_populates="place")
 
 

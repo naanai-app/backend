@@ -35,15 +35,12 @@ class UserListItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     list_id = Column(Integer, ForeignKey("user_lists.id"), nullable=False)
     place_id = Column(Integer, ForeignKey("places.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    notes = Column(Text, nullable=True)  # User's personal notes about the place
     rating = Column(Integer, nullable=True)  # User's personal rating (1-5)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
     # Relationships
     list = relationship("UserList", back_populates="items")
     place = relationship("Place", back_populates="list_items")
-    user = relationship("User", back_populates="list_items")
 
     # Ensure a place can only be in a list once
     __table_args__ = (

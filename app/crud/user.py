@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
+from app.crud.user_list import user_list_crud
 
 
 class UserCRUD:
@@ -40,6 +41,10 @@ class UserCRUD:
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
+        
+        # Create default liked/disliked lists for the new user
+        await user_list_crud.create_default_lists(db, db_user.id)
+        
         return db_user
 
     async def update(self, db: AsyncSession, user: User, user_update: UserUpdate) -> User:

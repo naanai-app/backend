@@ -1,0 +1,177 @@
+from typing import Optional, List
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_, desc, func
+from sqlalchemy.orm import selectinload
+
+from app.models.check_in import CheckIn, Comment, CheckInLike
+from app.models.place import Place
+from app.schemas.check_in import CheckInCreate, CheckInUpdate, CommentCreate, CommentUpdate
+
+
+class CheckInCRUD:
+    async def get(self, db: AsyncSession, check_in_id: int) -> Optional[CheckIn]:
+        """Get check-in by ID with all relationships"""
+        result = await db.execute(
+            select(CheckIn)
+            .options(
+                selectinload(CheckIn.author),
+                selectinload(CheckIn.place).selectinload(Place.categories),
+                selectinload(CheckIn.comments).selectinload(Comment.author),
+                selectinload(CheckIn.likes).selectinload(CheckInLike.user)
+            )
+            .where(CheckIn.id == check_in_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_multi(
+        self, db: AsyncSession, skip: int = 0, limit: int = 100
+    ) -> List[CheckIn]:
+        """Get multiple check-ins ordered by creation date"""
+        result = await db.execute(
+            select(CheckIn)
+            .options(
+                selectinload(CheckIn.author),
+                selectinload(CheckIn.place),
+                selectinload(CheckIn.comments).selectinload(Comment.author),
+                selectinload(CheckIn.likes)
+            )
+            .where(CheckIn.is_active == True)
+            .order_by(desc(CheckIn.created_at))
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def get_by_user(
+        self, db: AsyncSession, user_id: int, skip: int = 0, limit: int = 100
+    ) -> List[CheckIn]:
+        """Get check-ins by user"""
+        result = await db.execute(
+            select(CheckIn)
+            .options(
+                selectinload(CheckIn.author),
+                selectinload(CheckIn.place),
+                selectinload(CheckIn.comments).selectinload(Comment.author),
+                selectinload(CheckIn.likes)
+            )
+            .where(and_(CheckIn.author_id == user_id, CheckIn.is_active == True))
+            .order_by(desc(CheckIn.created_at))
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def create(self, db: AsyncSession, check_in_create: CheckInCreate, author_id: int) -> CheckIn:
+        """Create new check-in"""
+        db_check_in = CheckIn(**check_in_create.dict(), author_id=author_id)
+        db.add(db_check_in)
+        await db.commit()
+        await db.refresh(db_check_in)
+        return await self.get(db, db_check_in.id)
+
+    async def update(self, db: AsyncSession, check_in: CheckIn, check_in_update: CheckInUpdate) -> CheckIn:
+        """Update check-in"""
+        update_data = check_in_update.dict(exclude_unset=True)
+        
+        for field, value in update_data.items():
+            setattr(check_in, field, value)
+        
+        await db.commit()
+        await db.refresh(check_in)
+        return await self.get(db, check_in.id)
+
+    async def delete(self, db: AsyncSession, check_in: CheckIn) -> CheckIn:
+        """Soft delete check-in"""
+        check_in.is_active = False
+        await db.commit()
+        await db.refresh(check_in)
+        return check_in
+
+    async def like_check_in(self, db: AsyncSession, check_in_id: int, user_id: int) -> bool:
+        """Like a check-in"""
+        # Check if already liked
+        result = await db.execute(
+            select(CheckInLike).where(
+                and_(CheckInLike.check_in_id == check_in_id, CheckInLike.user_id == user_id)
+            )
+        )
+        existing_like = result.scalar_one_or_none()
+        
+        if existing_like:
+            return False  # Already liked
+        
+        like = CheckInLike(check_in_id=check_in_id, user_id=user_id)
+        db.add(like)
+        await db.commit()
+        return True
+
+    async def unlike_check_in(self, db: AsyncSession, check_in_id: int, user_id: int) -> bool:
+        """Unlike a check-in"""
+        result = await db.execute(
+            select(CheckInLike).where(
+                and_(CheckInLike.check_in_id == check_in_id, CheckInLike.user_id == user_id)
+            )
+        )
+        like = result.scalar_one_or_none()
+        
+        if not like:
+            return False  # Not liked
+        
+        await db.delete(like)
+        await db.commit()
+        return True
+
+
+class CommentCRUD:
+    async def get(self, db: AsyncSession, comment_id: int) -> Optional[Comment]:
+        """Get comment by ID"""
+        result = await db.execute(
+            select(Comment)
+            .options(selectinload(Comment.author))
+            .where(Comment.id == comment_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_check_in(
+        self, db: AsyncSession, check_in_id: int, skip: int = 0, limit: int = 100
+    ) -> List[Comment]:
+        """Get comments for a check-in"""
+        result = await db.execute(
+            select(Comment)
+            .options(selectinload(Comment.author))
+            .where(and_(Comment.check_in_id == check_in_id, Comment.is_active == True))
+            .order_by(Comment.created_at)
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def create(self, db: AsyncSession, comment_create: CommentCreate, check_in_id: int, author_id: int) -> Comment:
+        """Create new comment"""
+        db_comment = Comment(**comment_create.dict(), check_in_id=check_in_id, author_id=author_id)
+        db.add(db_comment)
+        await db.commit()
+        await db.refresh(db_comment)
+        return await self.get(db, db_comment.id)
+
+    async def update(self, db: AsyncSession, comment: Comment, comment_update: CommentUpdate) -> Comment:
+        """Update comment"""
+        update_data = comment_update.dict(exclude_unset=True)
+        
+        for field, value in update_data.items():
+            setattr(comment, field, value)
+        
+        await db.commit()
+        await db.refresh(comment)
+        return comment
+
+    async def delete(self, db: AsyncSession, comment: Comment) -> Comment:
+        """Soft delete comment"""
+        comment.is_active = False
+        await db.commit()
+        await db.refresh(comment)
+        return comment
+
+
+check_in_crud = CheckInCRUD()
+comment_crud = CommentCRUD()

@@ -2,13 +2,14 @@ from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
 from app.schemas.place import Place
+from app.models.user_list import ListVisibility
 
 
 class UserListBase(BaseModel):
     name: str
     description: Optional[str] = None
     list_type: str = "custom"
-    is_public: bool = False
+    visibility: ListVisibility = ListVisibility.PRIVATE
 
     @validator('list_type')
     def validate_list_type(cls, v):
@@ -24,12 +25,11 @@ class UserListCreate(UserListBase):
 class UserListUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    is_public: Optional[bool] = None
+    visibility: Optional[ListVisibility] = None
 
 
 class UserListItemBase(BaseModel):
     place_id: int
-    notes: Optional[str] = None
     rating: Optional[int] = None
 
     @validator('rating')
@@ -44,7 +44,6 @@ class UserListItemCreate(UserListItemBase):
 
 
 class UserListItemUpdate(BaseModel):
-    notes: Optional[str] = None
     rating: Optional[int] = None
 
     @validator('rating')
@@ -57,7 +56,6 @@ class UserListItemUpdate(BaseModel):
 class UserListItem(UserListItemBase):
     id: int
     list_id: int
-    user_id: int
     place: Place
     created_at: datetime
 
