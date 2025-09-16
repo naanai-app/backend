@@ -61,9 +61,14 @@ class UserCRUD:
         await db.refresh(user)
         return user
 
-    async def authenticate(self, db: AsyncSession, email: str, password: str) -> Optional[User]:
+    async def authenticate(self, db: AsyncSession, password: str, username:str = None, email: str = None) -> Optional[User]:
         """Authenticate user"""
-        user = await self.get_by_email(db, email)
+        if not username and not email:
+            raise ValueError("Username or email must be provided")
+        if email:
+            user = await self.get_by_email(db, email)
+        else:
+            user = await self.get_by_username(db, username)
         if not user:
             return None
         if not verify_password(password, user.hashed_password):

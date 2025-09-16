@@ -10,7 +10,7 @@ from app.core.security import create_access_token
 from app.core.graph_db import get_graph_db
 from app.crud.user import user_crud
 from app.schemas.user import User, UserCreate, Token
-from app.models.user_list import UserList
+from app.models.user_list import UserList, ListVisibility
 
 router = APIRouter()
 
@@ -54,15 +54,15 @@ async def create_user(
             user_id=user.id,
             is_default=True,
             list_type="liked",
-            is_public=False
+            visibility=ListVisibility.PRIVATE
         ),
         UserList(
-            name="Disliked Places", 
+            name="Disliked Places",
             description="Places you disliked",
             user_id=user.id,
             is_default=True,
             list_type="disliked",
-            is_public=False
+            visibility=ListVisibility.PRIVATE
         )
     ]
     
@@ -81,9 +81,9 @@ async def login_access_token(
 ) -> Any:
     """
     OAuth2 compatible token login, get an access token for future requests
-    """
+"""
     user = await user_crud.authenticate(
-        db, email=form_data.username, password=form_data.password
+        db, username=form_data.username, password=form_data.password
     )
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")

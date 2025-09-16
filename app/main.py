@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.graph_db import graph_db
 from app.api.v1.api import api_router
 
 
@@ -11,9 +12,10 @@ from app.api.v1.api import api_router
 async def lifespan(app: FastAPI):
     # Startup
     await init_db()
+    await graph_db.connect()
     yield
     # Shutdown
-    pass
+    await graph_db.close()
 
 
 app = FastAPI(

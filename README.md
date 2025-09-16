@@ -8,7 +8,7 @@ A comprehensive backend application for a NaaNai mobile application built with F
 - **User Authentication**: Sign up with email, username, password, and city. Login with email and password.
 - **Social Network**: Follow/unfollow users, mutual followers become "friends"
 - **Place Management**: Create and manage place cards with categories, descriptions, locations, and Google Maps integration
-- **Posts System**: Create posts with check-ins to places, like and comment on posts
+- **check_ins System**: Create check_ins with check-ins to places, like and comment on check_ins
 - **User Lists**: Liked/disliked places lists, custom user-created lists
 - **Search**: Advanced place search by text, categories, location, and filters
 - **Profile Management**: Edit nickname, password, and city
@@ -31,7 +31,7 @@ app/
 │       │   ├── users.py         # User management and social features
 │       │   ├── places.py        # Place management
 │       │   ├── categories.py    # Category management
-│       │   ├── check_ins.py         # Posts, likes, comments
+│       │   ├── check_ins.py         # check_ins, likes, comments
 │       │   └── user_lists.py    # User lists management
 │       └── api.py               # API router configuration
 ├── core/
@@ -145,19 +145,19 @@ make help         # Show all available commands
 - `PUT /api/v1/categories/{category_id}` - Update category
 - `DELETE /api/v1/categories/{category_id}` - Delete category
 
-### Posts
-- `GET /api/v1/posts/` - List posts
-- `POST /api/v1/posts/` - Create new post
-- `GET /api/v1/posts/{post_id}` - Get post by ID
-- `PUT /api/v1/posts/{post_id}` - Update post
-- `DELETE /api/v1/posts/{post_id}` - Delete post
-- `POST /api/v1/posts/{post_id}/like` - Like a post
-- `DELETE /api/v1/posts/{post_id}/like` - Unlike a post
-- `GET /api/v1/posts/{post_id}/comments` - Get post comments
-- `POST /api/v1/posts/{post_id}/comments` - Add comment to post
-- `PUT /api/v1/posts/comments/{comment_id}` - Update comment
-- `DELETE /api/v1/posts/comments/{comment_id}` - Delete comment
-- `GET /api/v1/posts/user/{user_id}` - Get posts by user
+### Check-Ins
+- `GET /api/v1/check_ins/` - List check_ins
+- `POST /api/v1/check_ins/` - Create new post
+- `GET /api/v1/check_ins/{check_in_id}` - Get post by ID
+- `PUT /api/v1/check_ins/{check_in_id}` - Update post
+- `DELETE /api/v1/check_ins/{check_in_id}` - Delete post
+- `POST /api/v1/check_ins/{check_in_id}/like` - Like a post
+- `DELETE /api/v1/check_ins/{check_in_id}/like` - Unlike a post
+- `GET /api/v1/check_ins/{check_in_id}/comments` - Get post comments
+- `POST /api/v1/check_ins/{check_in_id}/comments` - Add comment to post
+- `PUT /api/v1/check_ins/comments/{comment_id}` - Update comment
+- `DELETE /api/v1/check_ins/comments/{comment_id}` - Delete comment
+- `GET /api/v1/check_ins/user/{user_id}` - Get check_ins by user
 
 ### User Lists
 - `GET /api/v1/lists/` - Get current user's lists
@@ -180,8 +180,8 @@ make help         # Show all available commands
 - **places**: Place information and details
 - **categories**: Place categories with colors
 - **place_categories**: Many-to-many relationship between places and categories
-- **posts**: User posts with optional place check-ins
-- **comments**: Comments on posts (supports nested comments)
+- **check_ins**: User check_ins with optional place check-ins
+- **comments**: Comments on check_ins (supports nested comments)
 - **post_likes**: Post likes by users
 - **user_lists**: User-created lists (liked, disliked, custom)
 - **user_list_items**: Items in user lists with personal notes and ratings
@@ -209,7 +209,6 @@ Key environment variables:
 The project includes comprehensive database management scripts:
 
 #### Core Scripts
-- **`scripts/init_db.py`** - Initialize database tables and seed data
 - **`scripts/check_db.py`** - Check database health and connections
 - **`scripts/seed_data.py`** - Seed initial categories and demo data
 - **`scripts/create_admin.py`** - Create admin user interactively
@@ -218,14 +217,8 @@ The project includes comprehensive database management scripts:
 #### Usage Examples
 
 ```bash
-# Initialize database (creates tables and seeds data)
-python scripts/init_db.py
-
 # Check database health
 python scripts/check_db.py
-
-# Reset database (WARNING: deletes all data)
-python scripts/init_db.py --reset
 
 # Create admin user
 python scripts/create_admin.py
@@ -238,7 +231,6 @@ python scripts/seed_data.py
 
 **Linux/Mac:**
 ```bash
-./scripts/run.sh init    # Initialize database
 ./scripts/run.sh check   # Check database health
 ./scripts/run.sh admin   # Create admin user
 ./scripts/run.sh dev     # Start development server
@@ -246,7 +238,6 @@ python scripts/seed_data.py
 
 **Windows:**
 ```bash
-scripts\run.bat init     # Initialize database
 scripts\run.bat check    # Check database health
 scripts\run.bat admin    # Create admin user
 scripts\run.bat dev      # Start development server
@@ -256,14 +247,11 @@ scripts\run.bat dev      # Start development server
 
 ```bash
 # Using Makefile (recommended)
-make db-init      # Initialize database
 make db-check     # Check database health
 make create-admin # Create admin user
 make db-seed      # Seed demo data
-make db-reset     # Reset database
 
 # Using docker-compose directly
-docker-compose exec app python scripts/init_db.py
 docker-compose exec app python scripts/check_db.py
 docker-compose exec app python scripts/create_admin.py
 ```
