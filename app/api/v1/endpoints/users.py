@@ -40,6 +40,7 @@ async def update_user_me(
 async def read_user_by_id(
     user_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Any:
     """
     Get a specific user by id.
@@ -63,14 +64,14 @@ async def follow_user(
     """
     if current_user.id == user_id:
         raise HTTPException(
-            status_code=400, detail="You cannot follow yourself"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot follow yourself"
         )
     
     # Check if already following
     is_following = await graph_db.is_following(current_user.id, user_id)
     if is_following:
         raise HTTPException(
-            status_code=400, detail="You are already following this user"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="You are already following this user"
         )
     
     await graph_db.create_follow_relationship(current_user.id, user_id)
@@ -88,14 +89,14 @@ async def unfollow_user(
     """
     if current_user.id == user_id:
         raise HTTPException(
-            status_code=400, detail="You cannot unfollow yourself"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot unfollow yourself"
         )
     
     # Check if following
     is_following = await graph_db.is_following(current_user.id, user_id)
     if not is_following:
         raise HTTPException(
-            status_code=400, detail="You are not following this user"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="You are not following this user"
         )
     
     await graph_db.remove_follow_relationship(current_user.id, user_id)
@@ -107,6 +108,7 @@ async def get_user_followers(
     user_id: int,
     graph_db = Depends(get_graph_db),
     db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Any:
     """
     Get user's followers.
@@ -128,6 +130,7 @@ async def get_user_following(
     user_id: int,
     graph_db = Depends(get_graph_db),
     db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Any:
     """
     Get users that this user is following.
@@ -146,14 +149,14 @@ async def get_user_following(
 
 @router.get("/{user_id}/friends", response_model=List[UserPublic])
 async def get_user_friends(
-    user_id: int,
     graph_db = Depends(get_graph_db),
     db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Any:
     """
     Get user's friends (mutual followers).
     """
-    friends_data = await graph_db.get_friends(user_id)
+    friends_data = await graph_db.get_friends(current_user.id)
     
     # Get full user data from PostgreSQL
     friends = []
@@ -170,6 +173,7 @@ async def get_user_stats(
     user_id: int,
     graph_db = Depends(get_graph_db),
     db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user),
 ) -> Any:
     """
     Get user statistics.

@@ -14,6 +14,7 @@ router = APIRouter()
 @router.get("/", response_model=List[Place])
 async def read_places(
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:
@@ -61,6 +62,7 @@ async def read_place(
     *,
     db: AsyncSession = Depends(get_db),
     place_id: int,
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Get place by ID.
@@ -76,6 +78,7 @@ async def search_places(
     *,
     db: AsyncSession = Depends(get_db),
     search: PlaceSearch,
+    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:

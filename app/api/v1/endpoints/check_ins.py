@@ -14,6 +14,7 @@ router = APIRouter()
 @router.get("/", response_model=List[CheckIn])
 async def read_check_ins(
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:
@@ -43,6 +44,7 @@ async def read_check_in(
     *,
     db: AsyncSession = Depends(get_db),
     check_in_id: int,
+    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Get check_in by ID.
@@ -145,6 +147,7 @@ async def read_check_in_comments(
     *,
     db: AsyncSession = Depends(get_db),
     check_in_id: int,
+    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:
@@ -225,6 +228,7 @@ async def read_user_check_ins(
     *,
     db: AsyncSession = Depends(get_db),
     user_id: int,
+    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:

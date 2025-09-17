@@ -29,14 +29,14 @@ async def create_user(
     user = await user_crud.get_by_email(db, email=user_in.email)
     if user:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="The user with this email already exists in the system.",
         )
     
     user = await user_crud.get_by_username(db, username=user_in.username)
     if user:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="The user with this username already exists in the system.",
         )
     
@@ -86,9 +86,9 @@ async def login_access_token(
         db, username=form_data.username, password=form_data.password
     )
     if not user:
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
     elif not user_crud.is_active(user):
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {
         "access_token": create_access_token(

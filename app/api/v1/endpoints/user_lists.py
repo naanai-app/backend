@@ -248,6 +248,7 @@ async def read_public_user_lists(
     *,
     db: AsyncSession = Depends(get_db),
     user_id: int,
+    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:
