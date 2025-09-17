@@ -17,7 +17,7 @@ from app.models.category import Category
 from app.models.place import Place, PlaceCategory
 from app.models.user import User
 from app.models.check_in import CheckIn, Comment, CheckInLike
-from app.models.user_list import UserList, UserListItem
+from app.models.user_list import UserList, UserListItem, ListType, ListVisibility
 from app.core.security import get_password_hash
 
 
@@ -326,28 +326,28 @@ async def seed_user_lists(db: AsyncSession):
             "name": "Weekend Getaways",
             "description": "Perfect places to visit on weekends",
             "user_id": users[0].id,
-            "list_type": "custom",
+            "list_type": ListType.CUSTOM,
             "visibility": ListVisibility.PUBLIC
         },
         {
             "name": "Coffee Spots",
             "description": "My favorite coffee places in the city",
             "user_id": users[1].id if len(users) > 1 else users[0].id,
-            "list_type": "custom", 
+            "list_type": ListType.CUSTOM, 
             "visibility": ListVisibility.PUBLIC
         },
         {
             "name": "Date Night Ideas",
             "description": "Romantic places for special occasions",
             "user_id": users[2].id if len(users) > 2 else users[0].id,
-            "list_type": "custom",
+            "list_type": ListType.CUSTOM,
             "visibility": ListVisibility.PRIVATE
         },
         {
             "name": "Must Visit NYC",
             "description": "Essential NYC experiences for visitors",
             "user_id": users[0].id,
-            "list_type": "custom",
+            "list_type": ListType.CUSTOM,
             "visibility": ListVisibility.FRIENDS
         }
     ]

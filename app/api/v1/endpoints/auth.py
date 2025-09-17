@@ -46,29 +46,6 @@ async def create_user(
     # Create user node in Neo4j
     await graph_db.create_user_node(user.id, user.username, user.email)
     
-    # Create default lists for the user
-    default_lists = [
-        UserList(
-            name="Liked Places",
-            description="Places you liked",
-            user_id=user.id,
-            is_default=True,
-            list_type="liked",
-            visibility=ListVisibility.PRIVATE
-        ),
-        UserList(
-            name="Disliked Places",
-            description="Places you disliked",
-            user_id=user.id,
-            is_default=True,
-            list_type="disliked",
-            visibility=ListVisibility.PRIVATE
-        )
-    ]
-    
-    for default_list in default_lists:
-        db.add(default_list)
-    
     await db.commit()
     
     return user

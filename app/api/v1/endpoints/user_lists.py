@@ -125,7 +125,7 @@ async def add_item_to_list(
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     item = await user_list_item_crud.add_to_list(
-        db=db, list_id=list_id, user_id=current_user.id, item_create=item_in
+        db=db, list_id=list_id, item_create=item_in
     )
     
     if not item:

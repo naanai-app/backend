@@ -10,6 +10,10 @@ class ListVisibility(str, enum.Enum):
     PUBLIC = "public"
     FRIENDS = "friends"
 
+class ListType(str, enum.Enum):
+    custom = "custom"
+    liked = "liked"
+    disliked = "disliked"
 
 class UserList(Base):
     __tablename__ = "user_lists"
@@ -19,7 +23,7 @@ class UserList(Base):
     description = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_default = Column(Boolean, default=False)  # For liked/disliked places
-    list_type = Column(String, nullable=False)  # 'liked', 'disliked', 'custom'
+    list_type = Column(Enum(ListType), default=ListType.custom, nullable=False)
     visibility = Column(Enum(ListVisibility), default=ListVisibility.PRIVATE, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

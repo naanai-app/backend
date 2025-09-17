@@ -2,20 +2,13 @@ from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
 from app.schemas.place import Place
-from app.models.user_list import ListVisibility
+from app.models.user_list import ListVisibility, ListType
 
 
 class UserListBase(BaseModel):
     name: str
     description: Optional[str] = None
-    list_type: str = "custom"
     visibility: ListVisibility = ListVisibility.PRIVATE
-
-    @validator('list_type')
-    def validate_list_type(cls, v):
-        if v not in ['liked', 'disliked', 'custom']:
-            raise ValueError('List type must be one of: liked, disliked, custom')
-        return v
 
 
 class UserListCreate(UserListBase):
@@ -69,6 +62,7 @@ class UserList(UserListBase):
     is_default: bool
     items: List[UserListItem] = []
     items_count: int = 0
+    list_type: ListType
     created_at: datetime
     updated_at: Optional[datetime] = None
 
