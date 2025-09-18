@@ -1,5 +1,5 @@
-from pydantic import BaseModel, validator, model_validator
-from typing import Optional, List
+from pydantic import BaseModel, validator, field_serializer, model_validator
+from typing import Optional, List, Any
 from datetime import datetime
 
 
@@ -91,6 +91,30 @@ class Place(PlaceBase):
     categories: List[Category] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def extract_categories_from_place_categories(cls, data: Any) -> Any:
+        """Extract Category objects from PlaceCategory relationships before validation"""
+        if hasattr(data, 'categories') and data.categories:
+            # Extract actual Category objects from PlaceCategory relationships
+            categories = []
+            for place_category in data.categories:
+                if hasattr(place_category, 'category') and place_category.category:
+                    categories.append(place_category.category)
+            
+            # Replace categories with extracted Category objects
+            if hasattr(data, '__dict__'):
+                # For SQLAlchemy objects, create a dict copy
+                result = {}
+                for field in cls.model_fields:
+                    if field == 'categories':
+                        result[field] = categories
+                    else:
+                        result[field] = getattr(data, field, None)
+                return result
+        
+        return data
 
     class Config:
         from_attributes = True

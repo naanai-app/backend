@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, field_serializer, model_validator
+from typing import Optional, List, Any
 from datetime import datetime
 from app.schemas.user import UserPublic
 from app.schemas.place import Place
@@ -68,6 +68,31 @@ class CheckIn(CheckInBase):
     likes_count: int = 0
     comments_count: int = 0
     is_liked_by_user: bool = False
+
+    @model_validator(mode='before')
+    @classmethod
+    def prepare_check_in_data(cls, data: Any) -> Any:
+        """Prepare CheckIn data by handling place categories and calculating counts"""
+        if hasattr(data, '__dict__'):
+            # Create a dict copy for SQLAlchemy objects
+            result = {}
+            for field in ['id', 'content', 'image_url', 'author_id', 'place_id', 'is_active', 'created_at', 'updated_at']:
+                result[field] = getattr(data, field, None)
+            
+            # Handle relationships
+            result['author'] = getattr(data, 'author', None)
+            result['place'] = getattr(data, 'place', None)
+            result['comments'] = getattr(data, 'comments', [])
+            result['likes'] = getattr(data, 'likes', [])
+            
+            # Calculate counts
+            result['likes_count'] = len(result['likes']) if result['likes'] else 0
+            result['comments_count'] = len(result['comments']) if result['comments'] else 0
+            result['is_liked_by_user'] = False  # Would need user context
+            
+            return result
+        
+        return data
 
     class Config:
         from_attributes = True

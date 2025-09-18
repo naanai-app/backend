@@ -8,34 +8,6 @@ from app.models.category import Category
 from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch, Place as PlaceSchema
 
 
-def _prepare_place_for_response(place: Place) -> PlaceSchema:
-    """Prepare place object for Pydantic serialization by extracting categories"""
-    # Extract actual Category objects from PlaceCategory relationships
-    categories = []
-    if hasattr(place, 'categories') and place.categories:
-        for place_category in place.categories:
-            if hasattr(place_category, 'category') and place_category.category:
-                categories.append(place_category.category)
-    
-    # Create Pydantic model with extracted categories
-    return PlaceSchema(
-        id=place.id,
-        title=place.title,
-        description=place.description,
-        city=place.city,
-        address=place.address,
-        latitude=place.latitude,
-        longitude=place.longitude,
-        google_place_id=place.google_place_id,
-        phone=place.phone,
-        website=place.website,
-        price_level=place.price_level,
-        image_url=place.image_url,
-        rating=place.rating,
-        created_at=place.created_at,
-        updated_at=place.updated_at,
-        categories=categories
-    )
 
 
 class PlaceCRUD:
@@ -47,7 +19,7 @@ class PlaceCRUD:
             .where(Place.id == place_id)
         )
         place = result.scalar_one_or_none()
-        return _prepare_place_for_response(place) if place else None
+        return PlaceSchema.model_validate(place) if place else None
 
     async def get_multi(
         self, db: AsyncSession, skip: int = 0, limit: int = 100
@@ -60,7 +32,7 @@ class PlaceCRUD:
             .limit(limit)
         )
         places = result.scalars().all()
-        return [_prepare_place_for_response(place) for place in places]
+        return [PlaceSchema.model_validate(place) for place in places]
 
     async def create(self, db: AsyncSession, place_create: PlaceCreate) -> PlaceSchema:
         """Create new place"""
@@ -157,7 +129,7 @@ class PlaceCRUD:
         query = query.offset(skip).limit(limit)
         result = await db.execute(query)
         places = result.scalars().all()
-        return [_prepare_place_for_response(place) for place in places]
+        return [PlaceSchema.model_validate(place) for place in places]
 
     async def get_by_google_place_id(self, db: AsyncSession, google_place_id: str) -> Optional[PlaceSchema]:
         """Get place by Google Place ID"""
@@ -167,7 +139,7 @@ class PlaceCRUD:
             .where(Place.google_place_id == google_place_id)
         )
         place = result.scalar_one_or_none()
-        return _prepare_place_for_response(place) if place else None
+        return PlaceSchema.model_validate(place) if place else None
 
 
 place_crud = PlaceCRUD()
