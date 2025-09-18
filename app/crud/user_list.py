@@ -4,6 +4,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
 
 from app.models.user_list import UserList, UserListItem, ListVisibility
+from app.models.place import Place, PlaceCategory
 from app.schemas.user_list import UserListCreate, UserListUpdate, UserListItemCreate, UserListItemUpdate
 
 
@@ -14,6 +15,7 @@ class UserListCRUD:
             select(UserList)
             .options(
                 selectinload(UserList.items).selectinload(UserListItem.place)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category)
             )
             .where(UserList.id == list_id)
         )
@@ -25,7 +27,10 @@ class UserListCRUD:
         """Get user lists by user ID"""
         result = await db.execute(
             select(UserList)
-            .options(selectinload(UserList.items))
+            .options(
+                selectinload(UserList.items).selectinload(UserListItem.place)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+            )
             .where(UserList.user_id == user_id)
             .offset(skip)
             .limit(limit)
@@ -113,7 +118,10 @@ class UserListItemCRUD:
         """Get list item by ID"""
         result = await db.execute(
             select(UserListItem)
-            .options(selectinload(UserListItem.place))
+            .options(
+                selectinload(UserListItem.place)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+            )
             .where(UserListItem.id == item_id)
         )
         return result.scalar_one_or_none()
@@ -124,7 +132,10 @@ class UserListItemCRUD:
         """Get items in a list"""
         result = await db.execute(
             select(UserListItem)
-            .options(selectinload(UserListItem.place))
+            .options(
+                selectinload(UserListItem.place)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+            )
             .where(UserListItem.list_id == list_id)
             .offset(skip)
             .limit(limit)

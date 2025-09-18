@@ -36,6 +36,16 @@ class PlaceCRUD:
 
     async def create(self, db: AsyncSession, place_create: PlaceCreate) -> PlaceSchema:
         """Create new place"""
+        # Check if place with this google_place_id already exists
+        if place_create.google_place_id:
+            existing_result = await db.execute(
+                select(Place).where(Place.google_place_id == place_create.google_place_id)
+            )
+            existing_place = existing_result.scalar_one_or_none()
+            if existing_place:
+                # Return existing place with categories loaded
+                return await self.get(db, existing_place.id)
+        
         place_data = place_create.dict(exclude={"category_ids"})
         db_place = Place(**place_data)
         
@@ -54,8 +64,14 @@ class PlaceCRUD:
         await db.refresh(db_place)
         return await self.get(db, db_place.id)
 
-    async def update(self, db: AsyncSession, place: Place, place_update: PlaceUpdate) -> PlaceSchema:
+    async def update(self, db: AsyncSession, place_id: int, place_update: PlaceUpdate) -> PlaceSchema:
         """Update place"""
+        # Get the SQLAlchemy model object
+        result = await db.execute(select(Place).where(Place.id == place_id))
+        place = result.scalar_one_or_none()
+        if not place:
+            raise ValueError(f"Place with id {place_id} not found")
+        
         update_data = place_update.dict(exclude_unset=True, exclude={"category_ids"})
         
         for field, value in update_data.items():
@@ -78,7 +94,17 @@ class PlaceCRUD:
         
         await db.commit()
         await db.refresh(place)
-        return await self.get(db, place.id)
+        
+        # Get the updated place with all relationships loaded
+        result = await db.execute(
+            select(Place)
+            .options(
+                selectinload(Place.categories).selectinload(PlaceCategory.category)
+            )
+            .where(Place.id == place.id)
+        )
+        updated_place = result.scalar_one()
+        return PlaceSchema.model_validate(updated_place)
 
     async def search(self, db: AsyncSession, search: PlaceSearch, skip: int = 0, limit: int = 100) -> List[PlaceSchema]:
         """Search places with filters"""

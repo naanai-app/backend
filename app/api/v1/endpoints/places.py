@@ -50,10 +50,13 @@ async def update_place(
     """
     Update a place.
     """
-    place = await place_crud.get(db=db, place_id=place_id)
-    if not place:
+    # Check if place exists
+    existing_place = await place_crud.get(db=db, place_id=place_id)
+    if not existing_place:
         raise HTTPException(status_code=404, detail="Place not found")
-    place = await place_crud.update(db=db, place=place, place_update=place_in)
+    
+    # Update the place
+    place = await place_crud.update(db=db, place_id=place_id, place_update=place_in)
     return place
 
 

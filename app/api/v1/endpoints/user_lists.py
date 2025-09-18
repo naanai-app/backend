@@ -7,6 +7,7 @@ from app.core.deps import get_current_active_user
 from app.crud.user_list import user_list_crud, user_list_item_crud
 from app.schemas.user_list import UserList, UserListCreate, UserListUpdate, UserListItem, UserListItemCreate, UserListItemUpdate
 from app.models.user import User
+from app.models.user_list import ListVisibility, ListType
 
 router = APIRouter()
 
@@ -53,7 +54,7 @@ async def read_user_list(
     if not user_list:
         raise HTTPException(status_code=404, detail="List not found")
     
-    if user_list.user_id != current_user.id and not user_list.is_public:
+    if user_list.user_id != current_user.id and user_list.visibility != ListVisibility.PUBLIC:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     return user_list
@@ -151,7 +152,7 @@ async def read_list_items(
     if not user_list:
         raise HTTPException(status_code=404, detail="List not found")
     
-    if user_list.user_id != current_user.id and not user_list.is_public:
+    if user_list.user_id != current_user.id and user_list.visibility != ListVisibility.PUBLIC:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     items = await user_list_item_crud.get_by_list(db=db, list_id=list_id, skip=skip, limit=limit)
@@ -257,5 +258,5 @@ async def read_public_user_lists(
     """
     lists = await user_list_crud.get_by_user(db, user_id=user_id, skip=skip, limit=limit)
     # Filter only public lists
-    public_lists = [lst for lst in lists if lst.is_public]
+    public_lists = [lst for lst in lists if lst.visibility == ListVisibility.PUBLIC]
     return public_lists

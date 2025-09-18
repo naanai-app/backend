@@ -99,8 +99,8 @@ def upgrade() -> None:
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('is_default', sa.Boolean(), nullable=True),
-    sa.Column('list_type', sa.String(), nullable=False),
     sa.Column('visibility', sa.Enum('PRIVATE', 'PUBLIC', 'FRIENDS', name='listvisibility'), nullable=False),
+    sa.Column('list_type', sa.Enum('CUSTOM', 'LIKED', 'DISLIKED', name='listtype'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -173,4 +173,5 @@ def downgrade() -> None:
     op.drop_table('categories')
 
     op.execute('DROP TYPE listvisibility;')
+    op.execute('DROP TYPE listtype;')
     # ### end Alembic commands ###
