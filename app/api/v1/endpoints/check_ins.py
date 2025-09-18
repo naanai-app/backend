@@ -66,14 +66,16 @@ async def update_check_in(
     """
     Update a check_in.
     """
-    check_in = await check_in_crud.get(db=db, check_in_id=check_in_id)
-    if not check_in:
+    # Check if check-in exists and belongs to user
+    existing_check_in = await check_in_crud.get(db=db, check_in_id=check_in_id)
+    if not existing_check_in:
         raise HTTPException(status_code=404, detail="Check-In not found")
     
-    if check_in.author_id != current_user.id:
+    if existing_check_in.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    check_in = await check_in_crud.update(db=db, check_in=check_in, check_in_update=check_in_in)
+    # Update the check-in
+    check_in = await check_in_crud.update(db=db, check_in_id=check_in_id, check_in_update=check_in_in)
     return check_in
 
 
@@ -87,14 +89,16 @@ async def delete_check_in(
     """
     Delete a check_in.
     """
-    check_in = await check_in_crud.get(db=db, check_in_id=check_in_id)
-    if not check_in:
+    # Check if check-in exists and belongs to user
+    existing_check_in = await check_in_crud.get(db=db, check_in_id=check_in_id)
+    if not existing_check_in:
         raise HTTPException(status_code=404, detail="Check-In not found")
     
-    if check_in.author_id != current_user.id:
+    if existing_check_in.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    await check_in_crud.delete(db=db, check_in=check_in)
+    # Delete the check-in
+    await check_in_crud.delete(db=db, check_in_id=check_in_id)
     return {"message": "Check-In deleted successfully"}
 
 

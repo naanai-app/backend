@@ -75,8 +75,14 @@ class CheckInCRUD:
         await db.refresh(db_check_in)
         return await self.get(db, db_check_in.id)
 
-    async def update(self, db: AsyncSession, check_in: CheckIn, check_in_update: CheckInUpdate) -> CheckInSchema:
+    async def update(self, db: AsyncSession, check_in_id: int, check_in_update: CheckInUpdate) -> CheckInSchema:
         """Update check-in"""
+        # Get the SQLAlchemy model object
+        result = await db.execute(select(CheckIn).where(CheckIn.id == check_in_id))
+        check_in = result.scalar_one_or_none()
+        if not check_in:
+            raise ValueError(f"CheckIn with id {check_in_id} not found")
+        
         update_data = check_in_update.dict(exclude_unset=True)
         
         for field, value in update_data.items():
@@ -86,12 +92,17 @@ class CheckInCRUD:
         await db.refresh(check_in)
         return await self.get(db, check_in.id)
 
-    async def delete(self, db: AsyncSession, check_in: CheckIn) -> CheckIn:
-        """Soft delete check-in"""
-        check_in.is_active = False
+    async def delete(self, db: AsyncSession, check_in_id: int) -> bool:
+        """Delete check-in"""
+        # Get the SQLAlchemy model object
+        result = await db.execute(select(CheckIn).where(CheckIn.id == check_in_id))
+        check_in = result.scalar_one_or_none()
+        if not check_in:
+            raise ValueError(f"CheckIn with id {check_in_id} not found")
+        
+        await db.delete(check_in)
         await db.commit()
-        await db.refresh(check_in)
-        return check_in
+        return True
 
     async def like_check_in(self, db: AsyncSession, check_in_id: int, user_id: int) -> bool:
         """Like a check-in"""
