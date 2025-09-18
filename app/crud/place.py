@@ -5,22 +5,53 @@ from sqlalchemy.orm import selectinload
 
 from app.models.place import Place, PlaceCategory
 from app.models.category import Category
-from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch
+from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch, Place as PlaceSchema
+
+
+def _prepare_place_for_response(place: Place) -> PlaceSchema:
+    """Prepare place object for Pydantic serialization by extracting categories"""
+    # Extract actual Category objects from PlaceCategory relationships
+    categories = []
+    if hasattr(place, 'categories') and place.categories:
+        for place_category in place.categories:
+            if hasattr(place_category, 'category') and place_category.category:
+                categories.append(place_category.category)
+    
+    # Create Pydantic model with extracted categories
+    return PlaceSchema(
+        id=place.id,
+        title=place.title,
+        description=place.description,
+        city=place.city,
+        address=place.address,
+        latitude=place.latitude,
+        longitude=place.longitude,
+        google_place_id=place.google_place_id,
+        phone=place.phone,
+        website=place.website,
+        price_level=place.price_level,
+        image_url=place.image_url,
+        rating=place.rating,
+        created_at=place.created_at,
+        updated_at=place.updated_at,
+        categories=categories
+    )
 
 
 class PlaceCRUD:
-    async def get(self, db: AsyncSession, place_id: int) -> Optional[Place]:
+    async def get(self, db: AsyncSession, place_id: int) -> Optional[PlaceSchema]:
         """Get place by ID with categories"""
         result = await db.execute(
             select(Place)
             .options(selectinload(Place.categories).selectinload(PlaceCategory.category))
             .where(Place.id == place_id)
         )
-        return result.scalar_one_or_none()
+        place = result.scalar_one_or_none()
+        return _prepare_place_for_response(place) if place else None
 
     async def get_multi(
         self, db: AsyncSession, skip: int = 0, limit: int = 100
-    ) -> List[Place]:
+    ) -> List[PlaceSchema]:
         """Get multiple places"""
         result = await db.execute(
             select(Place)
@@ -28,9 +59,10 @@ class PlaceCRUD:
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().all()
+        places = result.scalars().all()
+        return [_prepare_place_for_response(place) for place in places]
 
-    async def create(self, db: AsyncSession, place_create: PlaceCreate) -> Place:
+    async def create(self, db: AsyncSession, place_create: PlaceCreate) -> PlaceSchema:
         """Create new place"""
         place_data = place_create.dict(exclude={"category_ids"})
         db_place = Place(**place_data)
@@ -50,7 +82,7 @@ class PlaceCRUD:
         await db.refresh(db_place)
         return await self.get(db, db_place.id)
 
-    async def update(self, db: AsyncSession, place: Place, place_update: PlaceUpdate) -> Place:
+    async def update(self, db: AsyncSession, place: Place, place_update: PlaceUpdate) -> PlaceSchema:
         """Update place"""
         update_data = place_update.dict(exclude_unset=True, exclude={"category_ids"})
         
@@ -76,7 +108,7 @@ class PlaceCRUD:
         await db.refresh(place)
         return await self.get(db, place.id)
 
-    async def search(self, db: AsyncSession, search: PlaceSearch, skip: int = 0, limit: int = 100) -> List[Place]:
+    async def search(self, db: AsyncSession, search: PlaceSearch, skip: int = 0, limit: int = 100) -> List[PlaceSchema]:
         """Search places with filters"""
         query = select(Place).options(
             selectinload(Place.categories).selectinload(PlaceCategory.category)
@@ -124,14 +156,18 @@ class PlaceCRUD:
         
         query = query.offset(skip).limit(limit)
         result = await db.execute(query)
-        return result.scalars().all()
+        places = result.scalars().all()
+        return [_prepare_place_for_response(place) for place in places]
 
-    async def get_by_google_place_id(self, db: AsyncSession, google_place_id: str) -> Optional[Place]:
+    async def get_by_google_place_id(self, db: AsyncSession, google_place_id: str) -> Optional[PlaceSchema]:
         """Get place by Google Place ID"""
         result = await db.execute(
-            select(Place).where(Place.google_place_id == google_place_id)
+            select(Place)
+            .options(selectinload(Place.categories).selectinload(PlaceCategory.category))
+            .where(Place.google_place_id == google_place_id)
         )
-        return result.scalar_one_or_none()
+        place = result.scalar_one_or_none()
+        return _prepare_place_for_response(place) if place else None
 
 
 place_crud = PlaceCRUD()
