@@ -38,7 +38,7 @@ if __name__ == "__main__":
     print(f" Starting FastAPI on http://127.0.0.1:{port}")
     print(f" Swagger UI: http://127.0.0.1:{port}/docs")
     print(f" ReDoc: http://127.0.0.1:{port}/redoc")
-    print(f" Using SQLite database for local development")
+    print(f" Using PostgreSQL database for local development")
     
     try:
         # Run with uvicorn for development

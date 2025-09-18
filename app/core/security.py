@@ -38,6 +38,14 @@ def verify_token(token: str) -> Optional[str]:
         user_id: str = payload.get("sub")
         if user_id is None:
             return None
+        
+        # Explicitly check expiration
+        exp = payload.get("exp")
+        
+        # Check if token is expired
+        if exp and datetime.utcnow().timestamp() > exp:
+            return None
+            
         return user_id
     except JWTError:
         return None

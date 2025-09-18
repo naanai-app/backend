@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, model_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -94,6 +94,17 @@ class Place(PlaceBase):
 
     class Config:
         from_attributes = True
+        
+    @model_validator(mode='before')
+    @classmethod
+    def extract_categories(cls, data):
+        if hasattr(data, 'category_objects'):
+            # Convert SQLAlchemy object to dict and use category_objects
+            if hasattr(data, '__dict__'):
+                result = data.__dict__.copy()
+                result['categories'] = data.category_objects
+                return result
+        return data
 
 
 class PlaceSearch(BaseModel):

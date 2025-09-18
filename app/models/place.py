@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Float, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 from app.core.database import Base
 
 
@@ -27,6 +28,11 @@ class Place(Base):
     categories = relationship("PlaceCategory", back_populates="place", cascade="all, delete-orphan")
     check_ins = relationship("CheckIn", back_populates="place")
     list_items = relationship("UserListItem", back_populates="place")
+    
+    @hybrid_property
+    def category_objects(self):
+        """Get the actual Category objects from PlaceCategory relationships"""
+        return [pc.category for pc in self.categories if pc.category]
 
 
 class PlaceCategory(Base):
