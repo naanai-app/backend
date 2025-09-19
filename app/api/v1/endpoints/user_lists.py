@@ -207,20 +207,19 @@ async def quick_like_place(
     *,
     db: AsyncSession = Depends(get_db),
     place_id: int,
-    rating: int = Query(default=5, ge=1, le=5),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Quick add place to liked list.
     """
     item = await user_list_item_crud.quick_add_to_default_list(
-        db=db, user_id=current_user.id, place_id=place_id, list_type="liked", rating=rating
+        db=db, user_id=current_user.id, place_id=place_id, list_type="liked"
     )
     
     if not item:
         raise HTTPException(status_code=400, detail="Could not add to liked list or already exists")
     
-    return {"message": "Place added to liked list", "item": item}
+    return {"message": "Place added to liked list"}
 
 
 @router.post("/quick-dislike/{place_id}")
@@ -228,20 +227,19 @@ async def quick_dislike_place(
     *,
     db: AsyncSession = Depends(get_db),
     place_id: int,
-    rating: int = Query(default=1, ge=1, le=5),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Quick add place to disliked list.
     """
     item = await user_list_item_crud.quick_add_to_default_list(
-        db=db, user_id=current_user.id, place_id=place_id, list_type="disliked", rating=rating
+        db=db, user_id=current_user.id, place_id=place_id, list_type="disliked"
     )
     
     if not item:
         raise HTTPException(status_code=400, detail="Could not add to disliked list or already exists")
     
-    return {"message": "Place added to disliked list", "item": item}
+    return {"message": "Place added to disliked list"}
 
 
 @router.get("/user/{user_id}", response_model=List[UserList])

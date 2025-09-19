@@ -135,7 +135,6 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('list_id', sa.Integer(), nullable=False),
     sa.Column('place_id', sa.Integer(), nullable=False),
-    sa.Column('rating', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.ForeignKeyConstraint(['list_id'], ['user_lists.id'], ),
     sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),

@@ -39,7 +39,6 @@ class UserListItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     list_id = Column(Integer, ForeignKey("user_lists.id"), nullable=False)
     place_id = Column(Integer, ForeignKey("places.id"), nullable=False)
-    rating = Column(Integer, nullable=True)  # User's personal rating (1-5)
     created_at = Column(DateTime, server_default=func.now())
 
     # Relationships

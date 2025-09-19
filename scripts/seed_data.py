@@ -371,12 +371,12 @@ async def seed_user_lists(db: AsyncSession):
     list_items_data = []
     if created_lists and places:
         list_items_data = [
-            {"list_id": created_lists[0].id, "place_id": places[0].id, "rating": 5},
-            {"list_id": created_lists[0].id, "place_id": places[1].id, "rating": 4},
-            {"list_id": created_lists[1].id, "place_id": places[2].id, "rating": 5},
-            {"list_id": created_lists[2].id, "place_id": places[0].id, "rating": 3},
-            {"list_id": created_lists[3].id if len(created_lists) > 3 else created_lists[0].id, "place_id": places[4].id if len(places) > 4 else places[0].id, "rating": 4},
-            {"list_id": created_lists[3].id if len(created_lists) > 3 else created_lists[0].id, "place_id": places[2].id if len(places) > 2 else places[0].id, "rating": 5}
+            {"list_id": created_lists[0].id, "place_id": places[0].id},
+            {"list_id": created_lists[0].id, "place_id": places[1].id},
+            {"list_id": created_lists[1].id, "place_id": places[2].id},
+            {"list_id": created_lists[2].id, "place_id": places[0].id},
+            {"list_id": created_lists[3].id if len(created_lists) > 3 else created_lists[0].id, "place_id": places[4].id if len(places) > 4 else places[0].id},
+            {"list_id": created_lists[3].id if len(created_lists) > 3 else created_lists[0].id, "place_id": places[2].id if len(places) > 2 else places[0].id}
         ]
     
     for item_data in list_items_data:

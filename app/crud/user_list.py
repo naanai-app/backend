@@ -155,7 +155,6 @@ class UserListItemCRUD:
         
         if existing_item:
             # Update existing item
-            existing_item.rating = item_create.rating
             await db.commit()
             await db.refresh(existing_item)
             return existing_item
@@ -188,8 +187,7 @@ class UserListItemCRUD:
         return True
 
     async def quick_add_to_default_list(
-        self, db: AsyncSession, user_id: int, place_id: int, list_type: str, rating: Optional[int] = None
-    ) -> Optional[UserListItem]:
+        self, db: AsyncSession, user_id: int, place_id: int, list_type: str) -> Optional[UserListItem]:
         """Quick add place to default liked/disliked list"""
         # Get the default list
         result = await db.execute(
@@ -206,7 +204,7 @@ class UserListItemCRUD:
         if not default_list:
             return None
         
-        item_create = UserListItemCreate(place_id=place_id, rating=rating)
+        item_create = UserListItemCreate(place_id=place_id)
         return await self.add_to_list(db, default_list.id, item_create)
 
 
