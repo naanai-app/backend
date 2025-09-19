@@ -194,8 +194,8 @@ async def remove_item_from_list(
     item = await user_list_item_crud.get(db=db, item_id=item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
-    if item.user_id != current_user.id:
+    lst = await user_list_crud.get(db=db, list_id=item.list_id)
+    if lst.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     await user_list_item_crud.remove_from_list(db=db, item=item)
