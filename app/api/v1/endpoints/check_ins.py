@@ -101,6 +101,23 @@ async def delete_check_in(
     await check_in_crud.delete(db=db, check_in_id=check_in_id)
     return {"message": "Check-In deleted successfully"}
 
+@router.get("/{check_in_id}/like")
+async def is_checkin_liked(
+    *,
+    db: AsyncSession = Depends(get_db),
+    check_in_id: int,
+    current_user: User = Depends(get_current_active_user),
+) -> bool:
+    """
+    Check if check_in is liked by this user.
+    """
+    # Check if check_in exists
+    check_in = await check_in_crud.get(db=db, check_in_id=check_in_id)
+    if not check_in:
+        raise HTTPException(status_code=404, detail="Check-In not found")
+
+    is_liked = await check_in_crud.is_check_in_liked(db=db, check_in_id=check_in_id, user_id=current_user.id)
+    return is_liked
 
 @router.post("/{check_in_id}/like")
 async def like_check_in(

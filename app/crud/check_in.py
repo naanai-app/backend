@@ -104,9 +104,9 @@ class CheckInCRUD:
         await db.commit()
         return True
 
-    async def like_check_in(self, db: AsyncSession, check_in_id: int, user_id: int) -> bool:
-        """Like a check-in"""
-        # Check if already liked
+    async def is_check_in_liked(self, db: AsyncSession, check_in_id: int, user_id: int) -> bool:
+        """Is check-in liked by this user already"""
+
         result = await db.execute(
             select(CheckInLike).where(
                 and_(CheckInLike.check_in_id == check_in_id, CheckInLike.user_id == user_id)
@@ -114,6 +114,17 @@ class CheckInCRUD:
         )
         existing_like = result.scalar_one_or_none()
         
+        if existing_like:
+            return True
+        else:
+            return False
+
+    async def like_check_in(self, db: AsyncSession, check_in_id: int, user_id: int) -> bool:
+        """Like a check-in"""
+        # Check if already liked
+        
+        existing_like = await self.is_check_in_liked(db, check_in_id, user_id)
+
         if existing_like:
             return False  # Already liked
         
