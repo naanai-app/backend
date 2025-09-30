@@ -2,6 +2,7 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, desc, func
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.expression import exists, and_, literal
 
 from app.models.check_in import CheckIn, Comment, CheckInLike
 from app.models.place import Place, PlaceCategory
@@ -12,10 +13,19 @@ from app.schemas.place import Place as PlaceSchema
 
 
 class CheckInCRUD:
-    async def get(self, db: AsyncSession, check_in_id: int) -> Optional[CheckInSchema]:
-        """Get check-in by ID with all relationships"""
-        result = await db.execute(
-            select(CheckIn)
+    async def get(self, db: AsyncSession, check_in_id: int, current_user_id: Optional[int] = None) -> Optional[CheckInSchema]:
+        """Get check-in by ID with all relationships and like status"""
+        # Base query with is_liked_by_user subquery
+        query = (
+            select(
+                CheckIn,
+                exists().where(
+                    and_(
+                        CheckInLike.check_in_id == CheckIn.id,
+                        CheckInLike.user_id == current_user_id
+                    )
+                ).label('is_liked_by_user') if current_user_id else literal(False).label('is_liked_by_user')
+            )
             .options(
                 selectinload(CheckIn.author),
                 selectinload(CheckIn.place).selectinload(Place.categories).selectinload(PlaceCategory.category),
@@ -24,15 +34,32 @@ class CheckInCRUD:
             )
             .where(CheckIn.id == check_in_id)
         )
-        check_in = result.scalar_one_or_none()
-        return CheckInSchema.model_validate(check_in) if check_in else None
+        
+        result = await db.execute(query)
+        row = result.first()
+        
+        if not row:
+            return None
+            
+        check_in = row[0]
+        check_in.is_liked_by_user = row[1]
+        return CheckInSchema.model_validate(check_in)
 
     async def get_multi(
-        self, db: AsyncSession, skip: int = 0, limit: int = 100
+        self, db: AsyncSession, skip: int = 0, limit: int = 100, current_user_id: Optional[int] = None
     ) -> List[CheckInSchema]:
-        """Get multiple check-ins ordered by creation date"""
-        result = await db.execute(
-            select(CheckIn)
+        """Get multiple check-ins ordered by creation date with like status"""
+        # Base query with is_liked_by_user subquery
+        query = (
+            select(
+                CheckIn,
+                exists().where(
+                    and_(
+                        CheckInLike.check_in_id == CheckIn.id,
+                        CheckInLike.user_id == current_user_id
+                    )
+                ).label('is_liked_by_user') if current_user_id else literal(False).label('is_liked_by_user')
+            )
             .options(
                 selectinload(CheckIn.author),
                 selectinload(CheckIn.place).selectinload(Place.categories).selectinload(PlaceCategory.category),
@@ -44,28 +71,55 @@ class CheckInCRUD:
             .offset(skip)
             .limit(limit)
         )
-        check_ins = result.scalars().all()
-        return [CheckInSchema.model_validate(check_in) for check_in in check_ins]
+        
+        result = await db.execute(query)
+        
+        # Map the results to include the is_liked_by_user flag
+        check_ins = []
+        for row in result.all():
+            check_in = row[0]
+            check_in.is_liked_by_user = row[1]
+            check_ins.append(CheckInSchema.model_validate(check_in))
+            
+        return check_ins
 
     async def get_by_user(
-        self, db: AsyncSession, user_id: int, skip: int = 0, limit: int = 100
+        self, db: AsyncSession, user_id: int, current_user_id: Optional[int] = None, skip: int = 0, limit: int = 100
     ) -> List[CheckInSchema]:
-        """Get check-ins by user"""
-        result = await db.execute(
-            select(CheckIn)
+        """Get check-ins by user with like status"""
+        # Base query with is_liked_by_user subquery
+        query = (
+            select(
+                CheckIn,
+                exists().where(
+                    and_(
+                        CheckInLike.check_in_id == CheckIn.id,
+                        CheckInLike.user_id == current_user_id
+                    )
+                ).label('is_liked_by_user') if current_user_id else literal(False).label('is_liked_by_user')
+            )
             .options(
                 selectinload(CheckIn.author),
                 selectinload(CheckIn.place).selectinload(Place.categories).selectinload(PlaceCategory.category),
                 selectinload(CheckIn.comments).selectinload(Comment.author),
                 selectinload(CheckIn.likes)
             )
-            .where(and_(CheckIn.author_id == user_id, CheckIn.is_active == True))
+            .where(CheckIn.author_id == user_id, CheckIn.is_active == True)
             .order_by(desc(CheckIn.created_at))
             .offset(skip)
             .limit(limit)
         )
-        check_ins = result.scalars().all()
-        return [CheckInSchema.model_validate(check_in) for check_in in check_ins]
+        
+        result = await db.execute(query)
+        
+        # Map the results to include the is_liked_by_user flag
+        check_ins = []
+        for row in result.all():
+            check_in = row[0]
+            check_in.is_liked_by_user = row[1]
+            check_ins.append(CheckInSchema.model_validate(check_in))
+            
+        return check_ins
 
     async def create(self, db: AsyncSession, check_in_create: CheckInCreate, author_id: int) -> CheckInSchema:
         """Create new check-in"""
@@ -75,7 +129,7 @@ class CheckInCRUD:
         await db.refresh(db_check_in)
         return await self.get(db, db_check_in.id)
 
-    async def update(self, db: AsyncSession, check_in_id: int, check_in_update: CheckInUpdate) -> CheckInSchema:
+    async def update(self, db: AsyncSession, check_in_id: int, check_in_update: CheckInUpdate, current_user_id: int) -> CheckInSchema:
         """Update check-in"""
         # Get the SQLAlchemy model object
         result = await db.execute(select(CheckIn).where(CheckIn.id == check_in_id))
@@ -90,7 +144,7 @@ class CheckInCRUD:
         
         await db.commit()
         await db.refresh(check_in)
-        return await self.get(db, check_in.id)
+        return await self.get(db, check_in.id, current_user_id=current_user_id)
 
     async def delete(self, db: AsyncSession, check_in_id: int) -> bool:
         """Delete check-in"""

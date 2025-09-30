@@ -76,8 +76,9 @@ class CheckIn(CheckInBase):
         if hasattr(data, '__dict__'):
             # Create a dict copy for SQLAlchemy objects
             result = {}
-            for field in ['id', 'content', 'image_url', 'author_id', 'place_id', 'is_active', 'created_at', 'updated_at']:
-                result[field] = getattr(data, field, None)
+            # Copy all fields from the model
+            for field in data.__table__.columns:
+                result[field.name] = getattr(data, field.name, None)
             
             # Handle relationships
             result['author'] = getattr(data, 'author', None)
@@ -85,10 +86,12 @@ class CheckIn(CheckInBase):
             result['comments'] = getattr(data, 'comments', [])
             result['likes'] = getattr(data, 'likes', [])
             
+            # Handle is_liked_by_user
+            result['is_liked_by_user'] = getattr(data, 'is_liked_by_user', False)
+            
             # Calculate counts
             result['likes_count'] = len(result['likes']) if result['likes'] else 0
             result['comments_count'] = len(result['comments']) if result['comments'] else 0
-            result['is_liked_by_user'] = False  # Would need user context
             
             return result
         
@@ -96,7 +99,6 @@ class CheckIn(CheckInBase):
 
     class Config:
         from_attributes = True
-
 
 # Update forward references
 Comment.model_rebuild()
