@@ -1,23 +1,49 @@
 from pydantic import BaseModel, field_serializer, model_validator
 from typing import Optional, List, Any
 from datetime import datetime
+from enum import Enum
 from app.schemas.user import UserPublic
 from app.schemas.place import Place
 
 
+class CheckInVisibilityEnum(str, Enum):
+    PRIVATE = "private"
+    PUBLIC = "public"
+    FRIENDS = "friends"
+
+
+class CheckInPhotoBase(BaseModel):
+    s3_url: str
+    s3_key: str
+    order: int = 0
+
+
+class CheckInPhotoCreate(CheckInPhotoBase):
+    pass
+
+
+class CheckInPhoto(CheckInPhotoBase):
+    id: int
+    check_in_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class CheckInBase(BaseModel):
     content: str
-    image_url: Optional[str] = None
     place_id: Optional[int] = None
+    visibility: CheckInVisibilityEnum = CheckInVisibilityEnum.PUBLIC
 
 
 class CheckInCreate(CheckInBase):
-    pass
+    photos: Optional[List[CheckInPhotoCreate]] = []
 
 
 class CheckInUpdate(BaseModel):
     content: Optional[str] = None
-    image_url: Optional[str] = None
+    visibility: Optional[CheckInVisibilityEnum] = None
 
 
 class CommentBase(BaseModel):
@@ -60,6 +86,7 @@ class CheckIn(CheckInBase):
     author_id: int
     author: UserPublic
     place: Optional[Place] = None
+    photos: List[CheckInPhoto] = []
     is_active: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -83,6 +110,7 @@ class CheckIn(CheckInBase):
             # Handle relationships
             result['author'] = getattr(data, 'author', None)
             result['place'] = getattr(data, 'place', None)
+            result['photos'] = getattr(data, 'photos', [])
             result['comments'] = getattr(data, 'comments', [])
             result['likes'] = getattr(data, 'likes', [])
             

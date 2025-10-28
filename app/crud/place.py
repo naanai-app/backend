@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 
-from app.models.place import Place, PlaceCategory
+from app.models.place import Place, PlaceCategory, PlacePhoto, PlaceReview, PlaceOptions
 from app.models.category import Category
 from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch, Place as PlaceSchema
 
@@ -12,10 +12,16 @@ from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch, Place as Pl
 
 class PlaceCRUD:
     async def get(self, db: AsyncSession, place_id: int) -> Optional[PlaceSchema]:
-        """Get place by ID with categories"""
+        """Get place by ID with all relationships"""
         result = await db.execute(
             select(Place)
-            .options(selectinload(Place.categories).selectinload(PlaceCategory.category))
+            .options(
+                selectinload(Place.primary_category),
+                selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(Place.photos),
+                selectinload(Place.reviews),
+                selectinload(Place.options)
+            )
             .where(Place.id == place_id)
         )
         place = result.scalar_one_or_none()
@@ -27,7 +33,13 @@ class PlaceCRUD:
         """Get multiple places"""
         result = await db.execute(
             select(Place)
-            .options(selectinload(Place.categories).selectinload(PlaceCategory.category))
+            .options(
+                selectinload(Place.primary_category),
+                selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(Place.photos),
+                selectinload(Place.reviews),
+                selectinload(Place.options)
+            )
             .offset(skip)
             .limit(limit)
         )
@@ -43,10 +55,10 @@ class PlaceCRUD:
             )
             existing_place = existing_result.scalar_one_or_none()
             if existing_place:
-                # Return existing place with categories loaded
+                # Return existing place with all relationships loaded
                 return await self.get(db, existing_place.id)
         
-        place_data = place_create.dict(exclude={"category_ids"})
+        place_data = place_create.dict(exclude={"category_ids", "photos", "reviews", "options"})
         db_place = Place(**place_data)
         
         db.add(db_place)
@@ -59,6 +71,32 @@ class PlaceCRUD:
                 category_id=category_id
             )
             db.add(place_category)
+        
+        # Add photos
+        if place_create.photos:
+            for photo_data in place_create.photos:
+                db_photo = PlacePhoto(
+                    place_id=db_place.id,
+                    **photo_data.dict()
+                )
+                db.add(db_photo)
+        
+        # Add reviews
+        if place_create.reviews:
+            for review_data in place_create.reviews:
+                db_review = PlaceReview(
+                    place_id=db_place.id,
+                    **review_data.dict()
+                )
+                db.add(db_review)
+        
+        # Add options
+        if place_create.options:
+            db_options = PlaceOptions(
+                place_id=db_place.id,
+                **place_create.options.dict()
+            )
+            db.add(db_options)
         
         await db.commit()
         await db.refresh(db_place)
@@ -114,25 +152,17 @@ class PlaceCRUD:
         
         conditions = []
         
-        # Text search in title and description
+        # Text search in name and description
         if search.query:
             text_condition = or_(
-                Place.title.ilike(f"%{search.query}%"),
+                Place.name.ilike(f"%{search.query}%"),
                 Place.description.ilike(f"%{search.query}%")
             )
             conditions.append(text_condition)
         
-        # City filter
-        if search.city:
-            conditions.append(Place.city.ilike(f"%{search.city}%"))
-        
         # Rating filter
         if search.min_rating:
             conditions.append(Place.rating >= search.min_rating)
-        
-        # Price level filter
-        if search.max_price_level:
-            conditions.append(Place.price_level <= search.max_price_level)
         
         # Location-based search (radius)
         if search.latitude and search.longitude and search.radius_km:
@@ -161,7 +191,13 @@ class PlaceCRUD:
         """Get place by Google Place ID"""
         result = await db.execute(
             select(Place)
-            .options(selectinload(Place.categories).selectinload(PlaceCategory.category))
+            .options(
+                selectinload(Place.primary_category),
+                selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(Place.photos),
+                selectinload(Place.reviews),
+                selectinload(Place.options)
+            )
             .where(Place.google_place_id == google_place_id)
         )
         place = result.scalar_one_or_none()

@@ -4,7 +4,7 @@ from sqlalchemy import select, and_, desc, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.expression import exists, and_, literal
 
-from app.models.check_in import CheckIn, Comment, CheckInLike
+from app.models.check_in import CheckIn, CheckInPhoto, Comment, CheckInLike
 from app.models.place import Place, PlaceCategory
 from app.schemas.check_in import CheckInCreate, CheckInUpdate, CommentCreate, CommentUpdate, CheckIn as CheckInSchema
 from app.schemas.place import Place as PlaceSchema
@@ -29,6 +29,7 @@ class CheckInCRUD:
             .options(
                 selectinload(CheckIn.author),
                 selectinload(CheckIn.place).selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(CheckIn.photos),
                 selectinload(CheckIn.comments).selectinload(Comment.author),
                 selectinload(CheckIn.likes).selectinload(CheckInLike.user)
             )
@@ -63,6 +64,7 @@ class CheckInCRUD:
             .options(
                 selectinload(CheckIn.author),
                 selectinload(CheckIn.place).selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(CheckIn.photos),
                 selectinload(CheckIn.comments).selectinload(Comment.author),
                 selectinload(CheckIn.likes)
             )
@@ -101,6 +103,7 @@ class CheckInCRUD:
             .options(
                 selectinload(CheckIn.author),
                 selectinload(CheckIn.place).selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(CheckIn.photos),
                 selectinload(CheckIn.comments).selectinload(Comment.author),
                 selectinload(CheckIn.likes)
             )
@@ -123,11 +126,23 @@ class CheckInCRUD:
 
     async def create(self, db: AsyncSession, check_in_create: CheckInCreate, author_id: int) -> CheckInSchema:
         """Create new check-in"""
-        db_check_in = CheckIn(**check_in_create.dict(), author_id=author_id)
+        check_in_data = check_in_create.dict(exclude={"photos"})
+        db_check_in = CheckIn(**check_in_data, author_id=author_id)
         db.add(db_check_in)
+        await db.flush()  # Get the ID without committing
+        
+        # Add photos
+        if check_in_create.photos:
+            for photo_data in check_in_create.photos:
+                db_photo = CheckInPhoto(
+                    check_in_id=db_check_in.id,
+                    **photo_data.dict()
+                )
+                db.add(db_photo)
+        
         await db.commit()
         await db.refresh(db_check_in)
-        return await self.get(db, db_check_in.id)
+        return await self.get(db, db_check_in.id, current_user_id=author_id)
 
     async def update(self, db: AsyncSession, check_in_id: int, check_in_update: CheckInUpdate, current_user_id: int) -> CheckInSchema:
         """Update check-in"""
