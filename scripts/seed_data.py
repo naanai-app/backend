@@ -94,58 +94,48 @@ async def seed_demo_places(db: AsyncSession):
     """Seed some demo places."""
     places_data = [
         {
-            "title": "Central Park",
+            "name": "Central Park",
             "description": "A large public park in Manhattan, New York City",
-            "city": "New York",
             "address": "New York, NY 10024, USA",
             "latitude": 40.7829,
             "longitude": -73.9654,
             "rating": 4.6,
-            "price_level": 1,
             "categories": ["Park"]
         },
         {
-            "title": "The Metropolitan Museum of Art",
+            "name": "The Metropolitan Museum of Art",
             "description": "One of the world's largest and most prestigious art museums",
-            "city": "New York",
             "address": "1000 5th Ave, New York, NY 10028, USA",
             "latitude": 40.7794,
             "longitude": -73.9632,
             "rating": 4.7,
-            "price_level": 2,
             "categories": ["Museum"]
         },
         {
-            "title": "Joe's Pizza",
+            "name": "Joe's Pizza",
             "description": "Famous New York pizza joint",
-            "city": "New York",
             "address": "7 Carmine St, New York, NY 10014, USA",
             "latitude": 40.7308,
             "longitude": -74.0023,
             "rating": 4.3,
-            "price_level": 2,
             "categories": ["Restaurant"]
         },
         {
-            "title": "Blue Bottle Coffee",
+            "name": "Blue Bottle Coffee",
             "description": "Specialty coffee roaster and retailer",
-            "city": "New York",
             "address": "54 Mint Plaza, San Francisco, CA 94103, USA",
             "latitude": 37.7849,
             "longitude": -122.4094,
             "rating": 4.2,
-            "price_level": 2,
             "categories": ["Cafe"]
         },
         {
-            "title": "Times Square",
+            "name": "Times Square",
             "description": "Major commercial intersection and entertainment center",
-            "city": "New York",
             "address": "Times Square, New York, NY 10036, USA",
             "latitude": 40.7580,
             "longitude": -73.9855,
             "rating": 4.1,
-            "price_level": 3,
             "categories": ["Entertainment"]
         }
     ]
@@ -157,7 +147,7 @@ async def seed_demo_places(db: AsyncSession):
     
     for place_data in places_data:
         # Check if place already exists
-        result = await db.execute(select(Place).where(Place.title == place_data["title"]))
+        result = await db.execute(select(Place).where(Place.name == place_data["name"]))
         existing_place = result.scalar_one_or_none()
         
         if not existing_place:
@@ -196,8 +186,7 @@ async def seed_check_ins_and_interactions(db: AsyncSession):
         {
             "content": "Amazing brunch at this cozy cafe! The avocado toast was perfect 🥑",
             "author_id": users[0].id,
-            "place_id": places[0].id if places else None,
-            "image_url": "https://example.com/brunch.jpg"
+            "place_id": places[0].id if places else None
         },
         {
             "content": "Great atmosphere for a date night. Highly recommend the pasta!",

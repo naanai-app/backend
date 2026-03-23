@@ -64,8 +64,8 @@ class PlacePhoto(PlacePhotoBase):
 class PlaceReviewBase(BaseModel):
     relative_publish_time_description: Optional[str] = None
     rating: Optional[int] = None
-    text: Optional[Dict[str, str]] = None  # {"text": "...", "languageCode": "en"}
-    original_text: Optional[Dict[str, str]] = None
+    text: Optional[str] = None
+    original_text: Optional[str] = None
 
 
 class PlaceReviewCreate(PlaceReviewBase):
@@ -84,7 +84,7 @@ class PlaceReview(PlaceReviewBase):
 # Options schemas
 class PlaceOptionsBase(BaseModel):
     business_status: Optional[str] = None
-    price_level: Optional[str] = None
+    price_level: Optional[int] = None
     payment_options: Optional[Dict[str, Any]] = None
     parking_options: Optional[Dict[str, Any]] = None
     fuel_options: Optional[Dict[str, Any]] = None
@@ -123,7 +123,7 @@ class PlaceOptionsCreate(PlaceOptionsBase):
 
 class PlaceOptionsUpdate(BaseModel):
     business_status: Optional[str] = None
-    price_level: Optional[str] = None
+    price_level: Optional[int] = None
     payment_options: Optional[Dict[str, Any]] = None
     parking_options: Optional[Dict[str, Any]] = None
     fuel_options: Optional[Dict[str, Any]] = None
