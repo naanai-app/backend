@@ -217,7 +217,7 @@ async def quick_like_place(
     )
     
     if not item:
-        raise HTTPException(status_code=400, detail="Could not add to liked list or already exists")
+        raise HTTPException(status_code=400, detail="Could not process liked place action")
     
     return {"message": "Place added to liked list"}
 
@@ -237,7 +237,7 @@ async def quick_dislike_place(
     )
     
     if not item:
-        raise HTTPException(status_code=400, detail="Could not add to disliked list or already exists")
+        raise HTTPException(status_code=400, detail="Could not process disliked place action")
     
     return {"message": "Place added to disliked list"}
 
