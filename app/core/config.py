@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     
     # Google Maps API (optional)
     GOOGLE_MAPS_API_KEY: Optional[str] = None
+
+    # S3 media (optional)
+    AWS_ACCESS_KEY_ID: Optional[str] = None
+    AWS_SECRET_ACCESS_KEY: Optional[str] = None
+    AWS_REGION: str = "ru-central1"
+    AWS_S3_BUCKET: Optional[str] = None
+    AWS_S3_ENDPOINT_URL: Optional[str] = None
+    MEDIA_PRESIGNED_URL_EXPIRE_SECONDS: int = 900
     
     # Debug settings
     DEBUG_SEED_DATA: bool = False

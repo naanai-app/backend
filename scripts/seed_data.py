@@ -14,7 +14,7 @@ from app.core.database import AsyncSessionLocal
 from app.core.graph_db import graph_db
 from sqlalchemy import select
 from app.models.category import Category
-from app.models.place import Place, PlaceCategory
+from app.models.place import Place, PlaceCategory, PlacePhoto, PlaceReview, PlaceOptions
 from app.models.user import User
 from app.models.check_in import CheckIn, Comment, CheckInLike
 from app.models.user_list import UserList, UserListItem, ListType, ListVisibility
@@ -94,59 +94,156 @@ async def seed_demo_places(db: AsyncSession):
     """Seed some demo places."""
     places_data = [
         {
-            "title": "Central Park",
+            "name": "Central Park",
             "description": "A large public park in Manhattan, New York City",
-            "city": "New York",
             "address": "New York, NY 10024, USA",
             "latitude": 40.7829,
             "longitude": -73.9654,
             "rating": 4.6,
-            "price_level": 1,
-            "categories": ["Park"]
+            "categories": ["Park"],
+            "photos": [
+                {
+                    "file_path": "https://images.unsplash.com/photo-1534430480872-3498386e7856",
+                    "attributions": [{"provider": "unsplash", "author": "Demo Seed"}]
+                }
+            ],
+            "reviews": [
+                {
+                    "relative_publish_time_description": "2 weeks ago",
+                    "rating": 5,
+                    "text": "Beautiful walkways, great for morning runs and picnics.",
+                    "original_text": "Beautiful walkways, great for morning runs and picnics."
+                }
+            ],
+            "options": {
+                "business_status": "OPERATIONAL",
+                "outdoor_seating": True,
+                "good_for_children": True,
+                "allows_dogs": True,
+                "good_for_groups": True
+            }
         },
         {
-            "title": "The Metropolitan Museum of Art",
+            "name": "The Metropolitan Museum of Art",
             "description": "One of the world's largest and most prestigious art museums",
-            "city": "New York",
             "address": "1000 5th Ave, New York, NY 10028, USA",
             "latitude": 40.7794,
             "longitude": -73.9632,
             "rating": 4.7,
-            "price_level": 2,
-            "categories": ["Museum"]
+            "categories": ["Museum"],
+            "photos": [
+                {
+                    "file_path": "https://images.unsplash.com/photo-1518998053901-5348d3961a04",
+                    "attributions": [{"provider": "unsplash", "author": "Demo Seed"}]
+                }
+            ],
+            "reviews": [
+                {
+                    "relative_publish_time_description": "1 month ago",
+                    "rating": 5,
+                    "text": "Incredible collections and very well curated exhibits.",
+                    "original_text": "Incredible collections and very well curated exhibits."
+                }
+            ],
+            "options": {
+                "business_status": "OPERATIONAL",
+                "price_level": 2,
+                "reservable": True,
+                "good_for_children": True,
+                "restroom": True
+            }
         },
         {
-            "title": "Joe's Pizza",
+            "name": "Joe's Pizza",
             "description": "Famous New York pizza joint",
-            "city": "New York",
             "address": "7 Carmine St, New York, NY 10014, USA",
             "latitude": 40.7308,
             "longitude": -74.0023,
             "rating": 4.3,
-            "price_level": 2,
-            "categories": ["Restaurant"]
+            "categories": ["Restaurant"],
+            "photos": [
+                {
+                    "file_path": "https://images.unsplash.com/photo-1513104890138-7c749659a591",
+                    "attributions": [{"provider": "unsplash", "author": "Demo Seed"}]
+                }
+            ],
+            "reviews": [
+                {
+                    "relative_publish_time_description": "5 days ago",
+                    "rating": 4,
+                    "text": "Classic NYC slice, quick service and great crust.",
+                    "original_text": "Classic NYC slice, quick service and great crust."
+                }
+            ],
+            "options": {
+                "business_status": "OPERATIONAL",
+                "price_level": 2,
+                "takeout": True,
+                "delivery": True,
+                "dine_in": True,
+                "serves_lunch": True,
+                "serves_dinner": True
+            }
         },
         {
-            "title": "Blue Bottle Coffee",
+            "name": "Blue Bottle Coffee",
             "description": "Specialty coffee roaster and retailer",
-            "city": "New York",
             "address": "54 Mint Plaza, San Francisco, CA 94103, USA",
             "latitude": 37.7849,
             "longitude": -122.4094,
             "rating": 4.2,
-            "price_level": 2,
-            "categories": ["Cafe"]
+            "categories": ["Cafe"],
+            "photos": [
+                {
+                    "file_path": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085",
+                    "attributions": [{"provider": "unsplash", "author": "Demo Seed"}]
+                }
+            ],
+            "reviews": [
+                {
+                    "relative_publish_time_description": "3 days ago",
+                    "rating": 4,
+                    "text": "Excellent espresso and calm atmosphere for remote work.",
+                    "original_text": "Excellent espresso and calm atmosphere for remote work."
+                }
+            ],
+            "options": {
+                "business_status": "OPERATIONAL",
+                "price_level": 2,
+                "takeout": True,
+                "dine_in": True,
+                "serves_coffee": True,
+                "outdoor_seating": True
+            }
         },
         {
-            "title": "Times Square",
+            "name": "Times Square",
             "description": "Major commercial intersection and entertainment center",
-            "city": "New York",
             "address": "Times Square, New York, NY 10036, USA",
             "latitude": 40.7580,
             "longitude": -73.9855,
             "rating": 4.1,
-            "price_level": 3,
-            "categories": ["Entertainment"]
+            "categories": ["Entertainment"],
+            "photos": [
+                {
+                    "file_path": "https://images.unsplash.com/photo-1534447677768-be436bb09401",
+                    "attributions": [{"provider": "unsplash", "author": "Demo Seed"}]
+                }
+            ],
+            "reviews": [
+                {
+                    "relative_publish_time_description": "6 days ago",
+                    "rating": 4,
+                    "text": "Vibrant and energetic spot, especially at night.",
+                    "original_text": "Vibrant and energetic spot, especially at night."
+                }
+            ],
+            "options": {
+                "business_status": "OPERATIONAL",
+                "good_for_groups": True,
+                "good_for_watching_sports": True,
+                "restroom": True
+            }
         }
     ]
     
@@ -157,23 +254,63 @@ async def seed_demo_places(db: AsyncSession):
     
     for place_data in places_data:
         # Check if place already exists
-        result = await db.execute(select(Place).where(Place.title == place_data["title"]))
-        existing_place = result.scalar_one_or_none()
-        
-        if not existing_place:
-            category_names = place_data.pop("categories", [])
+        result = await db.execute(select(Place).where(Place.name == place_data["name"]))
+        place = result.scalar_one_or_none()
+
+        category_names = place_data.pop("categories", [])
+        photos_data = place_data.pop("photos", [])
+        reviews_data = place_data.pop("reviews", [])
+        options_data = place_data.pop("options", None)
+
+        if not place:
             place = Place(**place_data)
             db.add(place)
             await db.flush()  # Get the ID
-            
-            # Add categories
-            for cat_name in category_names:
-                if cat_name in categories:
-                    place_category = PlaceCategory(
-                        place_id=place.id,
-                        category_id=categories[cat_name].id
-                    )
-                    db.add(place_category)
+
+        # Add missing categories
+        for cat_name in category_names:
+            category = categories.get(cat_name)
+            if not category:
+                continue
+
+            category_result = await db.execute(
+                select(PlaceCategory).where(
+                    PlaceCategory.place_id == place.id,
+                    PlaceCategory.category_id == category.id
+                )
+            )
+            if not category_result.scalar_one_or_none():
+                db.add(PlaceCategory(place_id=place.id, category_id=category.id))
+
+        # Add missing photos
+        for photo_data in photos_data:
+            photo_result = await db.execute(
+                select(PlacePhoto).where(
+                    PlacePhoto.place_id == place.id,
+                    PlacePhoto.file_path == photo_data["file_path"]
+                )
+            )
+            if not photo_result.scalar_one_or_none():
+                db.add(PlacePhoto(place_id=place.id, **photo_data))
+
+        # Add missing reviews
+        for review_data in reviews_data:
+            review_result = await db.execute(
+                select(PlaceReview).where(
+                    PlaceReview.place_id == place.id,
+                    PlaceReview.text == review_data.get("text")
+                )
+            )
+            if not review_result.scalar_one_or_none():
+                db.add(PlaceReview(place_id=place.id, **review_data))
+
+        # Add options if absent
+        if options_data:
+            options_result = await db.execute(
+                select(PlaceOptions).where(PlaceOptions.place_id == place.id)
+            )
+            if not options_result.scalar_one_or_none():
+                db.add(PlaceOptions(place_id=place.id, **options_data))
     
     await db.commit()
     print(f"✅ Seeded {len(places_data)} demo places")
@@ -196,8 +333,7 @@ async def seed_check_ins_and_interactions(db: AsyncSession):
         {
             "content": "Amazing brunch at this cozy cafe! The avocado toast was perfect 🥑",
             "author_id": users[0].id,
-            "place_id": places[0].id if places else None,
-            "image_url": "https://example.com/brunch.jpg"
+            "place_id": places[0].id if places else None
         },
         {
             "content": "Great atmosphere for a date night. Highly recommend the pasta!",
@@ -439,12 +575,12 @@ async def seed_follow_relationships():
 async def seed_initial_data():
     """Seed all initial data."""
     async with AsyncSessionLocal() as db:
-        await seed_categories(db)
+        #await seed_categories(db)
         await seed_demo_user(db)
-        await seed_demo_places(db)
-        await seed_check_ins_and_interactions(db)
-        await seed_user_lists(db)
-        await seed_follow_relationships()
+        #await seed_demo_places(db)
+        #await seed_check_ins_and_interactions(db)
+        #await seed_user_lists(db)
+        #await seed_follow_relationships()
 
 
 if __name__ == "__main__":

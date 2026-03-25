@@ -25,3 +25,4 @@ class User(Base):
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
     check_in_likes = relationship("CheckInLike", back_populates="user", cascade="all, delete-orphan")
     user_lists = relationship("UserList", back_populates="user", cascade="all, delete-orphan")
+    interactions = relationship("UserInteraction", back_populates="user", cascade="all, delete-orphan")

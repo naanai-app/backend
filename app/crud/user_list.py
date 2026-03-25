@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
 
-from app.models.user_list import UserList, UserListItem, ListVisibility
+from app.models.user_list import UserList, UserListItem, ListVisibility, ListType
 from app.models.place import Place, PlaceCategory
 from app.schemas.user_list import UserListCreate, UserListUpdate, UserListItemCreate, UserListItemUpdate
 
@@ -189,23 +189,68 @@ class UserListItemCRUD:
     async def quick_add_to_default_list(
         self, db: AsyncSession, user_id: int, place_id: int, list_type: str) -> Optional[UserListItem]:
         """Quick add place to default liked/disliked list"""
-        # Get the default list
+        if list_type not in {"liked", "disliked"}:
+            return None
+
+        target_list_type = ListType.LIKED if list_type == "liked" else ListType.DISLIKED
+        opposite_list_type = ListType.DISLIKED if target_list_type == ListType.LIKED else ListType.LIKED
+
         result = await db.execute(
             select(UserList).where(
                 and_(
                     UserList.user_id == user_id,
-                    UserList.list_type == list_type,
-                    UserList.is_default == True
+                    UserList.is_default == True,
+                    UserList.list_type.in_([target_list_type, opposite_list_type])
                 )
             )
         )
-        default_list = result.scalar_one_or_none()
-        
-        if not default_list:
-            return None
-        
-        item_create = UserListItemCreate(place_id=place_id)
-        return await self.add_to_list(db, default_list.id, item_create)
+        default_lists = {user_list.list_type: user_list for user_list in result.scalars().all()}
+        target_list = default_lists.get(target_list_type)
+        opposite_list = default_lists.get(opposite_list_type)
+
+        if not target_list:
+            default_lists = await user_list_crud.create_default_lists(db, user_id)
+            by_type = {user_list.list_type: user_list for user_list in default_lists}
+            target_list = by_type.get(target_list_type)
+            opposite_list = by_type.get(opposite_list_type)
+
+            if not target_list:
+                return None
+
+        target_result = await db.execute(
+            select(UserListItem).where(
+                UserListItem.list_id == target_list.id,
+                UserListItem.place_id == place_id
+            )
+        )
+        target_item = target_result.scalar_one_or_none()
+
+        opposite_item = None
+        if opposite_list:
+            opposite_result = await db.execute(
+                select(UserListItem).where(
+                    UserListItem.list_id == opposite_list.id,
+                    UserListItem.place_id == place_id
+                )
+            )
+            opposite_item = opposite_result.scalar_one_or_none()
+
+        changed = False
+
+        if opposite_item:
+            await db.delete(opposite_item)
+            changed = True
+
+        if not target_item:
+            target_item = UserListItem(list_id=target_list.id, place_id=place_id)
+            db.add(target_item)
+            changed = True
+
+        if changed:
+            await db.commit()
+
+        await db.refresh(target_item)
+        return target_item
 
 
 user_list_crud = UserListCRUD()

@@ -171,6 +171,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_categories_id'), table_name='categories')
     op.drop_table('categories')
 
-    op.execute('DROP TYPE listvisibility;')
-    op.execute('DROP TYPE listtype;')
+    op.execute('DROP TYPE IF EXISTS listvisibility;')
+    op.execute('DROP TYPE IF EXISTS listtype;')
     # ### end Alembic commands ###
