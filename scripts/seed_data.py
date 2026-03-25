@@ -575,12 +575,12 @@ async def seed_follow_relationships():
 async def seed_initial_data():
     """Seed all initial data."""
     async with AsyncSessionLocal() as db:
-        await seed_categories(db)
+        #await seed_categories(db)
         await seed_demo_user(db)
-        await seed_demo_places(db)
-        await seed_check_ins_and_interactions(db)
-        await seed_user_lists(db)
-        await seed_follow_relationships()
+        #await seed_demo_places(db)
+        #await seed_check_ins_and_interactions(db)
+        #await seed_user_lists(db)
+        #await seed_follow_relationships()
 
 
 if __name__ == "__main__":

@@ -1,8 +1,11 @@
 from typing import Optional, List
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.models.place import Place, PlaceCategory, PlacePhoto, PlaceReview, PlaceOptions
 from app.models.category import Category
 from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch, Place as PlaceSchema
@@ -11,6 +14,42 @@ from app.schemas.place import PlaceCreate, PlaceUpdate, PlaceSearch, Place as Pl
 
 
 class PlaceCRUD:
+    def _build_s3_client(self):
+        if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
+            return None
+
+        return boto3.client(
+            "s3",
+            region_name=settings.AWS_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+        )
+
+    def _populate_photo_media_urls(self, place: PlaceSchema) -> PlaceSchema:
+        if not place.photos:
+            return place
+
+        s3_client = self._build_s3_client()
+        has_s3 = bool(s3_client and settings.AWS_S3_BUCKET and place.google_place_id)
+
+        for index, photo in enumerate(place.photos):
+            if has_s3:
+                s3_key = f"bangkok_photos/{place.google_place_id}_{index}.jpg"
+                try:
+                    photo.media_url = s3_client.generate_presigned_url(
+                        "get_object",
+                        Params={"Bucket": settings.AWS_S3_BUCKET, "Key": s3_key},
+                        ExpiresIn=settings.MEDIA_PRESIGNED_URL_EXPIRE_SECONDS,
+                    )
+                    continue
+                except (ClientError, BotoCoreError):
+                    pass
+
+            photo.media_url = f"{settings.API_V1_STR}/media/place-photos/{photo.id}"
+
+        return place
+
     async def get(self, db: AsyncSession, place_id: int) -> Optional[PlaceSchema]:
         """Get place by ID with all relationships"""
         result = await db.execute(
@@ -25,7 +64,11 @@ class PlaceCRUD:
             .where(Place.id == place_id)
         )
         place = result.scalar_one_or_none()
-        return PlaceSchema.model_validate(place) if place else None
+        if not place:
+            return None
+
+        place_schema = PlaceSchema.model_validate(place)
+        return self._populate_photo_media_urls(place_schema)
 
     async def get_multi(
         self, db: AsyncSession, skip: int = 0, limit: int = 100
@@ -44,7 +87,8 @@ class PlaceCRUD:
             .limit(limit)
         )
         places = result.scalars().all()
-        return [PlaceSchema.model_validate(place) for place in places]
+        place_schemas = [PlaceSchema.model_validate(place) for place in places]
+        return [self._populate_photo_media_urls(place_schema) for place_schema in place_schemas]
 
     async def create(self, db: AsyncSession, place_create: PlaceCreate) -> PlaceSchema:
         """Create new place"""
@@ -137,12 +181,16 @@ class PlaceCRUD:
         result = await db.execute(
             select(Place)
             .options(
-                selectinload(Place.categories).selectinload(PlaceCategory.category)
+                selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(Place.photos),
+                selectinload(Place.reviews),
+                selectinload(Place.options),
             )
             .where(Place.id == place.id)
         )
         updated_place = result.scalar_one()
-        return PlaceSchema.model_validate(updated_place)
+        updated_place_schema = PlaceSchema.model_validate(updated_place)
+        return self._populate_photo_media_urls(updated_place_schema)
 
     async def search(self, db: AsyncSession, search: PlaceSearch, skip: int = 0, limit: int = 100) -> List[PlaceSchema]:
         """Search places with filters"""
@@ -185,7 +233,8 @@ class PlaceCRUD:
         query = query.offset(skip).limit(limit)
         result = await db.execute(query)
         places = result.scalars().all()
-        return [PlaceSchema.model_validate(place) for place in places]
+        place_schemas = [PlaceSchema.model_validate(place) for place in places]
+        return [self._populate_photo_media_urls(place_schema) for place_schema in place_schemas]
 
     async def get_by_google_place_id(self, db: AsyncSession, google_place_id: str) -> Optional[PlaceSchema]:
         """Get place by Google Place ID"""
@@ -201,7 +250,11 @@ class PlaceCRUD:
             .where(Place.google_place_id == google_place_id)
         )
         place = result.scalar_one_or_none()
-        return PlaceSchema.model_validate(place) if place else None
+        if not place:
+            return None
+
+        place_schema = PlaceSchema.model_validate(place)
+        return self._populate_photo_media_urls(place_schema)
 
 
 place_crud = PlaceCRUD()

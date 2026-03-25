@@ -2,6 +2,7 @@ from pydantic import BaseModel, validator, field_serializer, model_validator
 from typing import Optional, List, Any, Dict
 from datetime import datetime
 from enum import Enum
+from app.core.config import settings
 
 
 class CategoryBase(BaseModel):
@@ -53,7 +54,7 @@ class PlacePhotoCreate(PlacePhotoBase):
 
 class PlacePhoto(PlacePhotoBase):
     id: int
-    place_id: int
+    media_url: Optional[str] = None
     created_at: datetime
 
     class Config:
