@@ -91,30 +91,30 @@ class PlaceOptionsBase(BaseModel):
     ev_charge_options: Optional[Dict[str, Any]] = None
     price_range: Optional[Dict[str, Any]] = None
     accessibility_options: Optional[Dict[str, Any]] = None
-    takeout: bool = False
-    delivery: bool = False
-    dine_in: bool = False
-    curbside_pickup: bool = False
-    reservable: bool = False
-    serves_breakfast: bool = False
-    serves_lunch: bool = False
-    serves_dinner: bool = False
-    serves_beer: bool = False
-    serves_wine: bool = False
-    serves_brunch: bool = False
-    serves_vegetarian_food: bool = False
-    serves_cocktails: bool = False
-    serves_dessert: bool = False
-    serves_coffee: bool = False
-    outdoor_seating: bool = False
-    live_music: bool = False
-    menu_for_children: bool = False
-    good_for_children: bool = False
-    allows_dogs: bool = False
-    restroom: bool = False
-    good_for_groups: bool = False
-    good_for_watching_sports: bool = False
-    pure_service_area_business: bool = False
+    takeout: Optional[bool] = None
+    delivery: Optional[bool] = None
+    dine_in: Optional[bool] = None
+    curbside_pickup: Optional[bool] = None
+    reservable: Optional[bool] = None
+    serves_breakfast: Optional[bool] = None
+    serves_lunch: Optional[bool] = None
+    serves_dinner: Optional[bool] = None
+    serves_beer: Optional[bool] = None
+    serves_wine: Optional[bool] = None
+    serves_brunch: Optional[bool] = None
+    serves_vegetarian_food: Optional[bool] = None
+    serves_cocktails: Optional[bool] = None
+    serves_dessert: Optional[bool] = None
+    serves_coffee: Optional[bool] = None
+    outdoor_seating: Optional[bool] = None
+    live_music: Optional[bool] = None
+    menu_for_children: Optional[bool] = None
+    good_for_children: Optional[bool] = None
+    allows_dogs: Optional[bool] = None
+    restroom: Optional[bool] = None
+    good_for_groups: Optional[bool] = None
+    good_for_watching_sports: Optional[bool] = None
+    pure_service_area_business: Optional[bool] = None
 
 
 class PlaceOptionsCreate(PlaceOptionsBase):
@@ -230,13 +230,12 @@ class Place(PlaceBase):
             
             # Replace categories with extracted Category objects
             if hasattr(data, '__dict__'):
-                # For SQLAlchemy objects, create a dict copy
-                result = {}
-                for field in cls.model_fields:
-                    if field == 'categories':
-                        result[field] = categories
-                    else:
-                        result[field] = getattr(data, field, None)
+                # For SQLAlchemy objects, use only already-loaded attributes to avoid lazy-load IO
+                result = {
+                    key: value for key, value in data.__dict__.items()
+                    if key != '_sa_instance_state'
+                }
+                result['categories'] = categories
                 return result
         
         return data
