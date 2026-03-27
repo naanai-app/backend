@@ -26,3 +26,4 @@ class User(Base):
     check_in_likes = relationship("CheckInLike", back_populates="user", cascade="all, delete-orphan")
     user_lists = relationship("UserList", back_populates="user", cascade="all, delete-orphan")
     interactions = relationship("UserInteraction", back_populates="user", cascade="all, delete-orphan")
+    preferred_categories = relationship("UserPreferredCategory", back_populates="user", cascade="all, delete-orphan")

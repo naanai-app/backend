@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, ForeignKey, Boolean, JSON, Enum
+from sqlalchemy import Column, Integer, String, DateTime, Text, Float, ForeignKey, Boolean, JSON, Enum, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -148,6 +148,10 @@ class UserInteraction(Base):
     place_id = Column(Integer, ForeignKey("places.id", ondelete="CASCADE"), nullable=False)
     interaction_type = Column(Enum(InteractionType), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "place_id", name="unique_user_place_interaction"),
+    )
 
     # Relationships
     user = relationship("User", back_populates="interactions")

@@ -14,13 +14,27 @@ class InteractionCRUD:
         user_id: int, 
         interaction_create: UserInteractionCreate
     ) -> UserInteractionSchema:
-        """Create a new user interaction"""
-        db_interaction = UserInteraction(
-            user_id=user_id,
-            place_id=interaction_create.place_id,
-            interaction_type=InteractionType(interaction_create.interaction_type.value)
+        """Create or update a user interaction (unique by user/place)."""
+        existing_result = await db.execute(
+            select(UserInteraction).where(
+                and_(
+                    UserInteraction.user_id == user_id,
+                    UserInteraction.place_id == interaction_create.place_id,
+                )
+            )
         )
-        db.add(db_interaction)
+        db_interaction = existing_result.scalar_one_or_none()
+
+        if db_interaction:
+            db_interaction.interaction_type = InteractionType(interaction_create.interaction_type.value)
+        else:
+            db_interaction = UserInteraction(
+                user_id=user_id,
+                place_id=interaction_create.place_id,
+                interaction_type=InteractionType(interaction_create.interaction_type.value),
+            )
+            db.add(db_interaction)
+
         await db.commit()
         await db.refresh(db_interaction)
         return UserInteractionSchema.model_validate(db_interaction)
