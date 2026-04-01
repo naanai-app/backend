@@ -55,6 +55,7 @@ class PlacePhoto(Base):
     id = Column(Integer, primary_key=True, index=True)
     place_id = Column(Integer, ForeignKey("places.id", ondelete="CASCADE"), nullable=False)
     file_path = Column(String, nullable=False)  # Local file path
+    media_url = Column(String, nullable=True)
     attributions = Column(JSON, nullable=True)  # Store attribution data as JSON
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
