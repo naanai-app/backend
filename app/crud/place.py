@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,20 +83,42 @@ class PlaceCRUD:
         db: AsyncSession,
         places: List[Place],
     ) -> None:
+        if not places:
+            return
+
+        place_google_ids: Dict[int, Optional[str]] = {
+            place.id: place.google_place_id
+            for place in places
+            if place.id is not None
+        }
+        if not place_google_ids:
+            return
+
+        photos_result = await db.execute(
+            select(PlacePhoto)
+            .where(PlacePhoto.place_id.in_(list(place_google_ids.keys())))
+            .order_by(PlacePhoto.place_id.asc(), PlacePhoto.id.asc())
+        )
+        all_photos = photos_result.scalars().all()
+
+        photos_by_place: Dict[int, List[PlacePhoto]] = {}
+        for photo in all_photos:
+            photos_by_place.setdefault(photo.place_id, []).append(photo)
+
         changed = False
 
-        for place in places:
-            if not place.photos:
+        for place_id, photos in photos_by_place.items():
+            if not photos:
                 continue
 
-            photo_ids = [photo.id for photo in place.photos]
+            photo_ids = [photo.id for photo in photos]
             generated_urls = self._generate_photo_media_urls(
-                photo_count=len(place.photos),
-                google_place_id=place.google_place_id,
+                photo_count=len(photos),
+                google_place_id=place_google_ids.get(place_id),
                 photo_ids=photo_ids,
             )
 
-            for index, photo in enumerate(place.photos):
+            for index, photo in enumerate(photos):
                 if index >= len(generated_urls):
                     continue
                 generated_url = generated_urls[index]
@@ -265,7 +287,11 @@ class PlaceCRUD:
     async def search(self, db: AsyncSession, search: PlaceSearch, skip: int = 0, limit: int = 100) -> List[PlaceSchema]:
         """Search places with filters"""
         query = select(Place).options(
-            selectinload(Place.categories).selectinload(PlaceCategory.category)
+            selectinload(Place.primary_category),
+            selectinload(Place.categories).selectinload(PlaceCategory.category),
+            selectinload(Place.photos),
+            selectinload(Place.reviews),
+            selectinload(Place.options),
         )
         
         conditions = []
@@ -302,7 +328,7 @@ class PlaceCRUD:
         
         query = query.offset(skip).limit(limit)
         result = await db.execute(query)
-        places = result.scalars().all()
+        places = result.scalars().unique().all()
         await self._refresh_and_persist_photo_urls_for_places(db, places)
         return [PlaceSchema.model_validate(place) for place in places]
 
