@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, users, places, check_ins, categories, user_lists, media, user_preferences
+from app.api.v1.endpoints import auth, users, places, check_ins, categories, user_lists, media, user_preferences, recommendations
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
@@ -11,3 +11,4 @@ api_router.include_router(check_ins.router, prefix="/check_ins", tags=["check-in
 api_router.include_router(user_lists.router, prefix="/lists", tags=["user-lists"])
 api_router.include_router(media.router, prefix="/media", tags=["media"])
 api_router.include_router(user_preferences.router, prefix="/preferences", tags=["user-preferences"])
+api_router.include_router(recommendations.router, prefix="/recommendations", tags=["recommendations"])

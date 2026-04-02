@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     AWS_S3_BUCKET: Optional[str] = None
     AWS_S3_ENDPOINT_URL: Optional[str] = None
     MEDIA_PRESIGNED_URL_EXPIRE_SECONDS: int = 900
+
+    # Recommendation gRPC service
+    RECOMMENDATION_GRPC_HOST: str = "localhost"
+    RECOMMENDATION_GRPC_PORT: int = 50051
+    RECOMMENDATION_GRPC_TIMEOUT_SECONDS: float = 5.0
     
     # Debug settings
     DEBUG_SEED_DATA: bool = False
