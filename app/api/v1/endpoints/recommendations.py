@@ -1,4 +1,5 @@
 from typing import Any, List
+import random
 
 import grpc
 from fastapi import APIRouter, Depends, HTTPException
@@ -36,6 +37,7 @@ async def get_recommended_places_for_user(
             exclude_seen=payload.exclude_seen,
             filters=payload.filters,
         )
+        random.shuffle(place_ids)
     except grpc.aio.AioRpcError as e:
         raise HTTPException(status_code=502, detail=f"Recommendation service error: {e.code().name}")
 
@@ -44,6 +46,7 @@ async def get_recommended_places_for_user(
         place = await place_crud.get(db, place_id=place_id)
         if place:
             places.append(place)
+
 
     return places
 
