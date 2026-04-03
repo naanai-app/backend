@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     RECOMMENDATION_GRPC_HOST: str = "localhost"
     RECOMMENDATION_GRPC_PORT: int = 50051
     RECOMMENDATION_GRPC_TIMEOUT_SECONDS: float = 5.0
+
+    # Interaction event stream (Redis Streams)
+    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_STREAM_ENABLED: bool = True
+    REDIS_INTERACTION_STREAM_KEY: str = "stream:user_interactions"
     
     # Debug settings
     DEBUG_SEED_DATA: bool = False
