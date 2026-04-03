@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.core.graph_db import graph_db
 from app.core.recommendation_grpc import recommendation_grpc_client
+from app.core.recommendation_cache import recommendation_cache
 from app.core.interaction_stream import interaction_stream_producer
 from app.api.v1.api import api_router
 
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     await recommendation_grpc_client.close()
+    await recommendation_cache.close()
     await interaction_stream_producer.close()
     await graph_db.close()
 
