@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.graph_db import graph_db
+from app.core.recommendation_grpc import recommendation_grpc_client
 from app.api.v1.api import api_router
 
 
@@ -15,6 +16,7 @@ async def lifespan(app: FastAPI):
     await graph_db.connect()
     yield
     # Shutdown
+    await recommendation_grpc_client.close()
     await graph_db.close()
 
 

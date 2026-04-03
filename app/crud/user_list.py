@@ -15,7 +15,11 @@ class UserListCRUD:
             select(UserList)
             .options(
                 selectinload(UserList.items).selectinload(UserListItem.place)
-                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.primary_category),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.photos),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.reviews),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.options),
             )
             .where(UserList.id == list_id)
         )
@@ -29,7 +33,11 @@ class UserListCRUD:
             select(UserList)
             .options(
                 selectinload(UserList.items).selectinload(UserListItem.place)
-                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.primary_category),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.photos),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.reviews),
+                selectinload(UserList.items).selectinload(UserListItem.place).selectinload(Place.options),
             )
             .where(UserList.user_id == user_id)
             .offset(skip)
@@ -120,7 +128,11 @@ class UserListItemCRUD:
             select(UserListItem)
             .options(
                 selectinload(UserListItem.place)
-                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(UserListItem.place).selectinload(Place.primary_category),
+                selectinload(UserListItem.place).selectinload(Place.photos),
+                selectinload(UserListItem.place).selectinload(Place.reviews),
+                selectinload(UserListItem.place).selectinload(Place.options),
             )
             .where(UserListItem.id == item_id)
         )
@@ -134,7 +146,11 @@ class UserListItemCRUD:
             select(UserListItem)
             .options(
                 selectinload(UserListItem.place)
-                .selectinload(Place.categories).selectinload(PlaceCategory.category)
+                .selectinload(Place.categories).selectinload(PlaceCategory.category),
+                selectinload(UserListItem.place).selectinload(Place.primary_category),
+                selectinload(UserListItem.place).selectinload(Place.photos),
+                selectinload(UserListItem.place).selectinload(Place.reviews),
+                selectinload(UserListItem.place).selectinload(Place.options),
             )
             .where(UserListItem.list_id == list_id)
             .offset(skip)
@@ -157,7 +173,7 @@ class UserListItemCRUD:
             # Update existing item
             await db.commit()
             await db.refresh(existing_item)
-            return existing_item
+            return await self.get(db, existing_item.id)
         
         # Create new item
         db_item = UserListItem(
@@ -167,7 +183,7 @@ class UserListItemCRUD:
         db.add(db_item)
         await db.commit()
         await db.refresh(db_item)
-        return db_item
+        return await self.get(db, db_item.id)
 
     async def update(self, db: AsyncSession, item: UserListItem, item_update: UserListItemUpdate) -> UserListItem:
         """Update list item"""
@@ -250,7 +266,7 @@ class UserListItemCRUD:
             await db.commit()
 
         await db.refresh(target_item)
-        return target_item
+        return await self.get(db, target_item.id)
 
 
 user_list_crud = UserListCRUD()

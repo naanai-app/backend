@@ -14,6 +14,8 @@ services:
       - .:/app
     networks:
       - app-network
+      - shared-db-net
+
     restart: unless-stopped
 
   db:
@@ -28,6 +30,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
+      - shared-db-net
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -53,6 +57,7 @@ services:
       - neo4j_logs:/logs
     networks:
       - app-network
+      - shared-db-net
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "${NEO4J_USER}", "-p", "${NEO4J_PASSWORD}", "RETURN 1"]
@@ -79,6 +84,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
-
-# Add this helper script at the bottom of your docker-compose.yml
-# To use: docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+  shared-db-net:
+    external: true

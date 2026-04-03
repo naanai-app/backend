@@ -14,7 +14,6 @@ router = APIRouter()
 @router.get("/", response_model=List[Category])
 async def read_categories(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
     skip: int = 0,
     limit: int = Query(default=100, lte=100),
 ) -> Any:
@@ -80,7 +79,6 @@ async def read_category(
     *,
     db: AsyncSession = Depends(get_db),
     category_id: int,
-    current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """
     Get category by ID.
