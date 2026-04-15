@@ -283,15 +283,22 @@ async def seed_demo_places(db: AsyncSession):
                 db.add(PlaceCategory(place_id=place.id, category_id=category.id))
 
         # Add missing photos
-        for photo_data in photos_data:
+        for photo_idx, photo_data in enumerate(photos_data):
+            idx = photo_data.get("idx", photo_idx)
             photo_result = await db.execute(
                 select(PlacePhoto).where(
                     PlacePhoto.place_id == place.id,
-                    PlacePhoto.file_path == photo_data["file_path"]
+                    PlacePhoto.idx == idx,
                 )
             )
             if not photo_result.scalar_one_or_none():
-                db.add(PlacePhoto(place_id=place.id, **photo_data))
+                db.add(
+                    PlacePhoto(
+                        place_id=place.id,
+                        idx=idx,
+                        attributions=photo_data.get("attributions"),
+                    )
+                )
 
         # Add missing reviews
         for review_data in reviews_data:

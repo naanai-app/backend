@@ -44,7 +44,7 @@ class Category(CategoryBase):
 
 # Photo schemas
 class PlacePhotoBase(BaseModel):
-    file_path: str
+    idx: int
     attributions: Optional[List[Dict[str, Any]]] = None
 
 
@@ -54,6 +54,7 @@ class PlacePhotoCreate(PlacePhotoBase):
 
 class PlacePhoto(PlacePhotoBase):
     id: int
+    place_id: int
     media_url: Optional[str] = None
     created_at: datetime
 

@@ -28,7 +28,7 @@ class Place(Base):
     # Relationships
     primary_category = relationship("Category", foreign_keys=[primary_category_id])
     categories = relationship("PlaceCategory", back_populates="place", cascade="all, delete-orphan")
-    photos = relationship("PlacePhoto", back_populates="place", cascade="all, delete-orphan")
+    photos = relationship("PlacePhoto", back_populates="place", cascade="all, delete-orphan", order_by="PlacePhoto.idx")
     reviews = relationship("PlaceReview", back_populates="place", cascade="all, delete-orphan")
     options = relationship("PlaceOptions", back_populates="place", uselist=False, cascade="all, delete-orphan")
     check_ins = relationship("CheckIn", back_populates="place")
@@ -54,10 +54,13 @@ class PlacePhoto(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     place_id = Column(Integer, ForeignKey("places.id", ondelete="CASCADE"), nullable=False)
-    file_path = Column(String, nullable=False)  # Local file path
-    media_url = Column(String, nullable=True)
+    idx = Column(Integer, nullable=False)
     attributions = Column(JSON, nullable=True)  # Store attribution data as JSON
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("place_id", "idx", name="uq_place_photos_place_id_idx"),
+    )
 
     # Relationships
     place = relationship("Place", back_populates="photos")
