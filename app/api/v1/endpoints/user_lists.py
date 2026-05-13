@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_active_user
 from app.crud.user_list import user_list_crud, user_list_item_crud
+from app.crud.interaction import interaction_crud
+from app.schemas.place import UserInteractionCreate, InteractionTypeEnum
 from app.schemas.user_list import UserList, UserListCreate, UserListUpdate, UserListItem, UserListItemCreate, UserListItemUpdate
 from app.models.user import User
 from app.models.user_list import ListVisibility, ListType
@@ -218,6 +220,15 @@ async def quick_like_place(
     
     if not item:
         raise HTTPException(status_code=400, detail="Could not process liked place action")
+
+    await interaction_crud.create(
+        db=db,
+        user_id=current_user.id,
+        interaction_create=UserInteractionCreate(
+            place_id=place_id,
+            interaction_type=InteractionTypeEnum.LIKE,
+        ),
+    )
     
     return {"message": "Place added to liked list"}
 
@@ -238,8 +249,39 @@ async def quick_dislike_place(
     
     if not item:
         raise HTTPException(status_code=400, detail="Could not process disliked place action")
+
+    await interaction_crud.create(
+        db=db,
+        user_id=current_user.id,
+        interaction_create=UserInteractionCreate(
+            place_id=place_id,
+            interaction_type=InteractionTypeEnum.DISLIKE,
+        ),
+    )
     
     return {"message": "Place added to disliked list"}
+
+
+@router.post("/quick-skip/{place_id}")
+async def quick_skip_place(
+    *,
+    db: AsyncSession = Depends(get_db),
+    place_id: int,
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Record skipped place interaction.
+    """
+    await interaction_crud.create(
+        db=db,
+        user_id=current_user.id,
+        interaction_create=UserInteractionCreate(
+            place_id=place_id,
+            interaction_type=InteractionTypeEnum.SKIP,
+        ),
+    )
+
+    return {"message": "Place skip recorded"}
 
 
 @router.get("/user/{user_id}", response_model=List[UserList])

@@ -1,10 +1,10 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, desc
-from datetime import datetime
 
 from app.models.place import UserInteraction, InteractionType
 from app.schemas.place import UserInteractionCreate, UserInteraction as UserInteractionSchema, InteractionTypeEnum
+from app.core.interaction_stream import interaction_stream_producer
 
 
 class InteractionCRUD:
@@ -37,6 +37,15 @@ class InteractionCRUD:
 
         await db.commit()
         await db.refresh(db_interaction)
+
+        await interaction_stream_producer.publish_interaction_event(
+            event_type=db_interaction.interaction_type.value,
+            user_id=db_interaction.user_id,
+            place_id=db_interaction.place_id,
+            interaction_id=db_interaction.id,
+            occurred_at=db_interaction.created_at,
+        )
+
         return UserInteractionSchema.model_validate(db_interaction)
     
     async def get_user_interactions(

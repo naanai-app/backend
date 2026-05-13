@@ -30,6 +30,10 @@ def _build_s3_client():
     )
 
 
+def _build_photo_s3_key(google_place_id: str, photo_idx: int) -> str:
+    return f"bangkok_photos/{google_place_id}_{photo_idx}.jpg"
+
+
 @router.get("/place-photos/{photo_id}")
 async def get_place_photo(
     *,
@@ -38,7 +42,7 @@ async def get_place_photo(
     redirect: bool = Query(default=True),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """Return a place photo by ID via presigned S3 redirect based on place google_place_id."""
+    """Return a place photo by ID via presigned S3 redirect based on place google_place_id and idx."""
     result = await db.execute(
         select(PlacePhoto)
         .options(selectinload(PlacePhoto.place))
@@ -58,20 +62,8 @@ async def get_place_photo(
     if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
         raise HTTPException(status_code=500, detail="AWS S3 credentials are not configured")
 
-    siblings_result = await db.execute(
-        select(PlacePhoto.id)
-        .where(PlacePhoto.place_id == photo.place_id)
-        .order_by(PlacePhoto.id.asc())
-    )
-    sibling_photo_ids = [row[0] for row in siblings_result.all()]
+    s3_key = _build_photo_s3_key(photo.place.google_place_id, photo.idx)
 
-    try:
-        photo_index = sibling_photo_ids.index(photo.id)
-    except ValueError:
-        raise HTTPException(status_code=500, detail="Could not resolve photo index")
-
-    s3_key = f"bangkok_photos/{photo.place.google_place_id}_{photo_index}.jpg"
-    print(s3_key)
     try:
         presigned_url = _build_s3_client().generate_presigned_url(
             "get_object",
@@ -88,3 +80,55 @@ async def get_place_photo(
         return RedirectResponse(url=presigned_url, status_code=307)
 
     return {"url": presigned_url, "key": s3_key}
+
+
+@router.get("/place-photos/by-place/{place_id}/{idx}")
+async def get_place_photo_by_place_and_idx(
+    *,
+    db: AsyncSession = Depends(get_db),
+    place_id: int,
+    idx: int,
+    redirect: bool = Query(default=True),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Return a place photo by place_id and idx via presigned S3 redirect."""
+    result = await db.execute(
+        select(PlacePhoto)
+        .options(selectinload(PlacePhoto.place))
+        .where(PlacePhoto.place_id == place_id, PlacePhoto.idx == idx)
+    )
+    photo = result.scalar_one_or_none()
+
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    if not photo.place or not photo.place.google_place_id:
+        raise HTTPException(status_code=404, detail="Place google_place_id not found")
+
+    if not settings.AWS_S3_BUCKET:
+        raise HTTPException(status_code=500, detail="AWS_S3_BUCKET is not configured")
+
+    if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
+        raise HTTPException(status_code=500, detail="AWS S3 credentials are not configured")
+
+    s3_key = _build_photo_s3_key(photo.place.google_place_id, photo.idx)
+
+    try:
+        presigned_url = _build_s3_client().generate_presigned_url(
+            "get_object",
+            Params={"Bucket": settings.AWS_S3_BUCKET, "Key": s3_key},
+            ExpiresIn=settings.MEDIA_PRESIGNED_URL_EXPIRE_SECONDS,
+        )
+    except (NoCredentialsError, PartialCredentialsError):
+        raise HTTPException(status_code=500, detail="Invalid AWS S3 credentials")
+    except (ClientError, BotoCoreError) as e:
+        logger.exception(
+            "Failed to generate presigned URL",
+            extra={"place_id": place_id, "idx": idx, "s3_key": s3_key},
+        )
+        raise HTTPException(status_code=500, detail=f"Could not generate media URL: {str(e)}")
+
+    if redirect:
+        return RedirectResponse(url=presigned_url, status_code=307)
+
+    return {"url": presigned_url, "key": s3_key, "photo_id": photo.id}

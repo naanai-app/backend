@@ -17,3 +17,4 @@ python-dotenv==1.0.0
 boto3==1.34.162
 grpcio==1.66.2
 protobuf==5.27.3
+redis==5.0.8
